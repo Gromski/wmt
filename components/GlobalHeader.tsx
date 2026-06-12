@@ -3,6 +3,7 @@
 import { LogIn, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -18,7 +19,10 @@ export function GlobalHeader() {
 
   async function handleSignOut() {
     await authClient.signOut({
-      fetchOptions: { onSuccess: () => router.push("/sign-in") },
+      fetchOptions: {
+        onSuccess: () => router.push("/sign-in"),
+        onError: () => toast.error("Sign-out failed. Please try again."), // WR-02
+      },
     });
   }
 
