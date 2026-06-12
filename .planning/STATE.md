@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: 01-01 Walking Skeleton scaffold complete — human-verify approved, ready for 01-01b
-last_updated: "2026-06-12T16:42:17.575Z"
+stopped_at: 01-01b Walking Skeleton wiring complete — human-verify approved, ready for 01-02
+last_updated: "2026-06-12T17:00:00.000Z"
 last_activity: 2026-06-12
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 25
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 01 (access-shell) — EXECUTING
-Plan: 3 of 4 (01-01 complete, next: 01-01b)
+Plan: 4 of 4 (01-01, 01-01b complete, next: 01-02)
 Status: Ready to execute
 Last activity: 2026-06-12
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [█████░░░░░] 50%
 
 *Updated after each plan completion*
 | Phase 01-access-shell P01 | 45 | 3 tasks | 19 files |
+| Phase 01-access-shell P01b | 8 | 4 tasks + 1 checkpoint | 12 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,10 @@ Recent decisions affecting current work:
 - [Phase 1, Plan 01-01]: Use npm instead of pnpm — user chose npm at Task 1 checkpoint
 - [Phase 1, Plan 01-01]: shadcn v4 radix-nova preset used instead of new-york (v3 style removed in v4.11.0)
 - [Phase 1, Plan 01-01]: biome.json updated post-Task 3 for v2.x compatibility — files.includes syntax, linter.rules.preset, css.parser.tailwindDirectives (commit 7d0f76e)
+- [Phase 1, Plan 01-01b]: drizzle.config.ts omits authToken in sqlite dialect — only valid for turso dialect in production
+- [Phase 1, Plan 01-01b]: role column uses text with enum constraint (not Better Auth admin plugin) per RESEARCH.md Pitfall 2
+- [Phase 1, Plan 01-01b]: databaseHooks.user.create.before hook (not after) for atomic first-user-admin assignment
+- [Phase 1, Plan 01-01b]: proxy.ts matcher is ['/dashboard', '/dashboard/:path*'] — public routes excluded per D-04
 
 ### Pending Todos
 
@@ -83,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-12T16:42:17.569Z
-Stopped at: 01-01 Walking Skeleton scaffold complete — human-verify approved, ready for 01-01b
+Last session: 2026-06-12T17:00:00.000Z
+Stopped at: 01-01b Walking Skeleton wiring complete — human-verify approved, ready for 01-02
 Resume file: None

@@ -108,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Access & Shell | 2/4 | In Progress|  |
+| 1. Access & Shell | 3/4 | In Progress|  |
 | 2. Import Pipeline | 0/TBD | Not started | - |
 | 3. Archive Browsing | 0/TBD | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |
