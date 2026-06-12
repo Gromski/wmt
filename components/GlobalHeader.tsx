@@ -7,11 +7,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-
-function getInitials(name: string): string {
-  const tokens = name.trim().split(/\s+/).slice(0, 2);
-  return tokens.map((t) => t[0]?.toUpperCase() ?? "").join("");
-}
+import { getInitials } from "@/lib/utils";
 
 export function GlobalHeader() {
   const { data: session, isPending } = authClient.useSession();
