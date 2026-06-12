@@ -1,13 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-
-export default function Home() {
+export default function ArchivePage() {
   return (
-    <main className="p-8">
-      <Card className="p-6 max-w-sm">
-        <h1 className="text-xl font-semibold">Skeleton ready</h1>
-        <Button className="mt-4">Smoke test</Button>
-      </Card>
+    <main className="mx-auto max-w-[720px] px-6 pt-16">
+      <h1 className="text-xl font-semibold">No sessions yet</h1>
+      <p className="mt-4 text-base text-muted-foreground">
+        Sessions will appear here once the archive has been imported. Check back
+        soon.
+      </p>
     </main>
   );
 }
