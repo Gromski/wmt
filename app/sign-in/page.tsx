@@ -61,7 +61,10 @@ export default function SignInPage() {
         { email, password, callbackURL: "/dashboard" },
         {
           onRequest: () => setIsPending(true),
-          onSuccess: () => router.push("/dashboard"),
+          onSuccess: () => {
+            setIsPending(false); // WR-01: reset before navigation in case push fails
+            router.push("/dashboard");
+          },
           onError: () => {
             setIsPending(false);
             toast.error(
@@ -75,7 +78,10 @@ export default function SignInPage() {
         { email, password, name, callbackURL: "/dashboard" },
         {
           onRequest: () => setIsPending(true),
-          onSuccess: () => router.push("/dashboard"),
+          onSuccess: () => {
+            setIsPending(false); // WR-01: reset before navigation in case push fails
+            router.push("/dashboard");
+          },
           onError: (ctx) => {
             setIsPending(false);
             toast.error(
@@ -142,7 +148,7 @@ export default function SignInPage() {
                 id="password"
                 type="password"
                 required
-                autoComplete="current-password"
+                autoComplete={isSignIn ? "current-password" : "new-password"}
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
