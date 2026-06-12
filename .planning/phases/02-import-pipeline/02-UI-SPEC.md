@@ -181,7 +181,7 @@ Layout: shadcn Alert component with `variant="default"` and custom amber left-bo
 - Card heading: "N sessions need manual attribution" (Heading role, 20px/600)
 - Card subtext: "The descriptions below did not contain a recognisable initials string. Assign contributor order manually." (Body role, 16px/400, muted-foreground)
 - Each errored session: its theme as a row heading (Label role, 14px/400, semibold)
-- Each slot row: "Tracks 1–4:" label (12px, Label role) + Select dropdown (contributor name)
+- Each slot row: "Tracks 1–4:" label (Label role, 14px/400, muted-foreground) + Select dropdown (contributor name)
 - Save button per session: `variant="default"` (violet accent), label "Save attribution", 100% width of the session sub-card
 - After save: badge changes from amber "Unassigned" to green-tinted "Assigned", row collapses
 
