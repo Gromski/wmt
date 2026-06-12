@@ -117,6 +117,8 @@ completed: "2026-06-12"
 1. **Task 1: User prereq (checkpoint)** — resolved by user responding "use-npm"; no commit (checkpoint task)
 2. **Task 2: Scaffold + deps** — `191f4d3` (chore: scaffold Next.js 16 + Tailwind v4 + install full dep set + Biome)
 3. **Task 3: shadcn + six components** — `ede8805` (feat: install shadcn/ui nova preset and add six Phase 1 components)
+4. **Post-Task 3: Biome v2.x fix** — `7d0f76e` (fix: update biome.json for v2.x — tailwindDirectives, includes syntax, exclude public)
+5. **Task 4: Human-verify checkpoint** — approved by user; lint passes, typecheck passes
 
 ## Files Created/Modified
 
@@ -183,9 +185,21 @@ completed: "2026-06-12"
 - **Verification:** `grep '"baseColor": "zinc"' components.json` passes; CSS variables applied
 - **Committed in:** ede8805 (Task 3 commit)
 
+**3. [Rule 1 - Bug] biome.json incompatible with Biome v2.x syntax**
+- **Found during:** Post-Task 3 (human-verify checkpoint — lint reported errors)
+- **Issue:** Biome 2.x removed `files.ignore` in favour of `files.includes` with `!`-prefixed exclusion patterns. The `linter.rules.recommended: true` boolean was replaced by `linter.rules.preset: "recommended"`. CSS linting required an explicit `css.parser.tailwindDirectives: true` to handle `@import "tailwindcss"`. The `public/` directory also needed exclusion to avoid Biome attempting to lint binary/static assets.
+- **Fix:** Updated `biome.json`:
+  - `files.ignore` → `files.includes` array with `!node_modules`, `!.next`, `!drizzle`, `!*.config.*`, `!public`
+  - `linter.rules.recommended: true` → `linter.rules.preset: "recommended"`
+  - Added `css.parser.tailwindDirectives: true`
+  - shadcn component files also reformatted by Biome (single-quote → double-quote, semicolons adjusted per Biome defaults)
+- **Files modified:** biome.json, components/ui/button.tsx, components/ui/card.tsx, components/ui/avatar.tsx, components/ui/badge.tsx, components/ui/separator.tsx, components/ui/sonner.tsx
+- **Verification:** `npm run lint` exits 0, `npm run typecheck` exits 0 — confirmed by human-verify checkpoint approval
+- **Committed in:** 7d0f76e (post-Task 3 fix commit)
+
 ---
 
-**Total deviations:** 2 auto-fixed (both Rule 1 — bugs in plan instructions due to tool version changes)
+**Total deviations:** 3 auto-fixed (all Rule 1 — bugs due to tool version changes: create-next-app in-place refusal, shadcn v4 CLI API changes, Biome v2.x config syntax changes)
 
 **Impact on plan:** Both auto-fixes necessary to work around tool version mismatches. The visual/functional outcome is identical to plan spec: zinc-based dark theme, violet primary, CSS variables, six components. No scope creep.
 
@@ -210,7 +224,7 @@ Ready for Plan 01-01b (Walking Skeleton wiring):
 - shadcn components available at `@/components/ui/`
 - `.env.local` ready with DATABASE_URL=file:local.db
 
-**Human verify checkpoint pending:** User must run `npm run dev` and confirm the smoke page renders with dark zinc background and violet Button before 01-01b can proceed.
+**Human verify checkpoint approved:** User confirmed smoke page renders with dark zinc background and violet Button. `npm run lint` and `npm run typecheck` both pass.
 
 ---
 *Phase: 01-access-shell*

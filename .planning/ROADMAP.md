@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Import trigger, date editing, and write operations are hidden from unauthenticated users (and from non-admin authenticated users for the import trigger)
   4. Admin can trigger a re-import or sync from within the authenticated dashboard
 
-**Plans:** 1/4 plans executed
+**Plans:** 1/4 plans complete
 Plans:
 **Wave 1**
 
@@ -108,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Access & Shell | 1/4 | In Progress|  |
+| 1. Access & Shell | 1/4 | In Progress | 01-01 complete 2026-06-12 |
 | 2. Import Pipeline | 0/TBD | Not started | - |
 | 3. Archive Browsing | 0/TBD | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |
