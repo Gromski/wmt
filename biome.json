@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": ["node_modules", ".next", "drizzle", "*.config.*"]
+    "includes": [
+      "**",
+      "!node_modules",
+      "!.next",
+      "!drizzle",
+      "!*.config.*",
+      "!public"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -17,7 +24,13 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "preset": "recommended"
+    }
+  },
+  "css": {
+    "parser": {
+      "allowWrongLineComments": false,
+      "tailwindDirectives": true
     }
   },
   "javascript": {
