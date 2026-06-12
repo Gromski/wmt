@@ -472,18 +472,20 @@ export const db = drizzle(client, { schema });
 
 **Warning signs:** `drizzle-kit generate` produces a migration with duplicate `role` columns, or `npx auth@latest generate` errors about field name collision.
 
-### Pitfall 3: `proxy.ts` — using NextRequest `headers()` correctly
-**What goes wrong:** Calling `auth.api.getSession({ headers: request.headers })` instead of `{ headers: await headers() }` in the proxy function. The `next/headers` `headers()` function is needed for the server-side session lookup; passing raw request headers may not include all cookies.
+### Pitfall 3: `proxy.ts` — `next/headers` is NOT available in proxy/middleware context
+**What goes wrong (CORRECTED):** Using `import { headers } from "next/headers"` inside `proxy.ts` will cause a runtime error because `next/headers` is only available in Server Components and Route Handlers — NOT in the edge/middleware context where `proxy.ts` runs.
 
-**Why it happens:** Docs for middleware patterns vs. proxy patterns differ. In `proxy.ts`, use `await headers()` from `next/headers` for the full server context.
+**Why it happens:** The original research incorrectly conflated Server Component patterns with middleware patterns. `next/headers` is a Server Component API; `proxy.ts` is middleware.
 
-**How to avoid:** Import `headers` from `next/headers`, not from the request object.
+**How to avoid:** Use `request.headers` directly in `proxy.ts`:
 ```typescript
-import { headers } from "next/headers";
-const session = await auth.api.getSession({ headers: await headers() });
+const session = await auth.api.getSession({ headers: request.headers });
 ```
+`request.headers` is the `NextRequest` object's headers which includes all cookies from the incoming request. This works correctly in the edge/middleware context.
 
-**Warning signs:** Session always returns `null` in `proxy.ts` even after successful sign-in.
+**Rule:** `next/headers` → use in Server Components and Route Handlers only. `request.headers` → use in `proxy.ts` and any middleware.
+
+**Warning signs:** Runtime error on any request to `/dashboard` if `next/headers` is imported in `proxy.ts`.
 
 ### Pitfall 4: pnpm not installed — scaffold fails
 **What goes wrong:** `pnpm create next-app@latest` fails if pnpm is not globally installed. Node 20.20.1 is present on this machine but pnpm is not (verified: `pnpm --version` returned command not found).
