@@ -44,7 +44,7 @@
 - Cross-theme correlation analytics — which themes brought out which musical tendencies (needs 40+ sessions for statistical reliability)
 - Session mood/vibe analysis — blocked by Spotify audio features deprecation; revisit if a viable alternative emerges
 - Email or push notifications (e.g. reminder before a session)
-- Taste resonance predictor — ML-based; disproportionate complexity for a 4-user app
+- Taste resonance predictor — ML/based; disproportionate complexity for a 4-user app
 
 ---
 
@@ -60,14 +60,26 @@
 
 ## Traceability
 
-*(Populated by roadmap)*
-
-| REQ-ID | Phase | Notes |
-|--------|-------|-------|
-| IMPORT-01 to IMPORT-04 | — | — |
-| IMPORT-05 | — | — |
-| IMPORT-06 | — | — |
-| IMPORT-07 to IMPORT-08 | — | — |
-| BROWSE-01 to BROWSE-05 | — | — |
-| ANALYTICS-01 to ANALYTICS-04 | — | — |
-| ACCESS-01 to ACCESS-04 | — | — |
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| ACCESS-01 | Phase 1 — Access & Shell | Pending |
+| ACCESS-02 | Phase 1 — Access & Shell | Pending |
+| ACCESS-03 | Phase 1 — Access & Shell | Pending |
+| ACCESS-04 | Phase 1 — Access & Shell | Pending |
+| IMPORT-01 | Phase 2 — Import Pipeline | Pending |
+| IMPORT-02 | Phase 2 — Import Pipeline | Pending |
+| IMPORT-03 | Phase 2 — Import Pipeline | Pending |
+| IMPORT-04 | Phase 2 — Import Pipeline | Pending |
+| IMPORT-05 | Phase 2 — Import Pipeline | Pending |
+| IMPORT-06 | Phase 2 — Import Pipeline | Pending |
+| IMPORT-07 | Phase 2 — Import Pipeline | Pending |
+| IMPORT-08 | Phase 2 — Import Pipeline | Pending |
+| BROWSE-01 | Phase 3 — Archive Browsing | Pending |
+| BROWSE-02 | Phase 3 — Archive Browsing | Pending |
+| BROWSE-03 | Phase 3 — Archive Browsing | Pending |
+| BROWSE-04 | Phase 3 — Archive Browsing | Pending |
+| BROWSE-05 | Phase 3 — Archive Browsing | Pending |
+| ANALYTICS-01 | Phase 4 — Analytics | Pending |
+| ANALYTICS-02 | Phase 4 — Analytics | Pending |
+| ANALYTICS-03 | Phase 4 — Analytics | Pending |
+| ANALYTICS-04 | Phase 4 — Analytics | Pending |
