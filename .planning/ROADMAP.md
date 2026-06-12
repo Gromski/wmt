@@ -29,7 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Unauthenticated visitors can open a public URL and see the archive without logging in
   3. Import trigger, date editing, and write operations are hidden from unauthenticated users
   4. Admin can trigger a re-import or sync from within the authenticated dashboard
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Walking Skeleton foundation: scaffold Next.js 16 + Tailwind v4 + shadcn, wire Drizzle/libSQL schema with role column, configure Better Auth (Spotify provider + first-user-admin hook), build public archive empty state, push schema
+- [ ] 01-02-PLAN.md — Authenticated vertical slice: proxy.ts route gate, global header with sign-in/sign-out, dashboard Server Component with signed-in confirmation; proves OAuth round trip end-to-end
+- [ ] 01-03-PLAN.md — Admin import-trigger slice: POST /api/import with 401/403/202 gates, admin-only Card on dashboard; end-to-end verification of ACCESS-01..04
 
 ### Phase 2: Import Pipeline
 **Goal**: All 31 sessions are imported from Spotify, tracks correctly attributed to each person, enriched with genre/artist tags, and dates enterable by the admin
@@ -79,7 +83,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Access & Shell | 0/TBD | Not started | - |
+| 1. Access & Shell | 0/3 | Not started | - |
 | 2. Import Pipeline | 0/TBD | Not started | - |
 | 3. Archive Browsing | 0/TBD | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |
