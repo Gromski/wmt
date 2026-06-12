@@ -691,22 +691,22 @@ LASTFM_API_KEY=your_lastfm_api_key
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Exact playlist naming convention used by Mark**
+1. **Exact playlist naming convention used by Mark** — RESOLVED
    - What we know: Session number is in the playlist name; theme and initials are in description; regex is Claude's discretion (D-03)
    - What's unclear: The exact format of Mark's playlist names (e.g. "Session 01 – Road Trip" vs "Warwick Massive #01")
-   - Recommendation: The import route should log all fetched playlist names on first run so the regex can be refined. Start permissive: `/\b(\d+)\b/` on name to extract session number.
+   - **RESOLUTION:** Plan 02-02 logs all unmatched playlist names on first run via `console.log("[import] skipped playlist:", p.attributes?.name)`; the regex pattern can be refined at runtime once the actual naming convention is observed. Claude's discretion applies per D-03. Start permissive: `/\b(\d+)\b/` on name to extract session number.
 
-2. **Number of unique artists**
+2. **Number of unique artists** — RESOLVED
    - What we know: ~496 tracks total; Last.fm enrichment at 4 req/sec
    - What's unclear: Actual unique artist count (affects Last.fm enrichment duration)
-   - Recommendation: 50 artists = ~12s; 200 artists = ~50s; both well within 300s. No special handling needed.
+   - **RESOLUTION:** Estimated ~100 unique artists (≈20% of total track count is a typical curated-playlist ratio). At 4 req/sec, 100 artists = ~25s; 200 artists = ~50s; both well within 300s. Last.fm rate-limiting (Pitfall 5 + Pattern 8) handles any count gracefully — errors return empty arrays, the loop never aborts the import. No special handling needed regardless of actual count.
 
-3. **Apple Developer Program credentials**
+3. **Apple Developer Program credentials** — RESOLVED
    - What we know: Apple Developer Program ($99/year) is required for a MusicKit identifier and `.p8` key
    - What's unclear: Whether Mark has an active membership with a MusicKit key already created
-   - Recommendation: Wave 0 prerequisite task — verify `APPLE_TEAM_ID`, `APPLE_KEY_ID`, and `APPLE_PRIVATE_KEY` are set in `.env.local` and the developer token can be generated before any import code runs
+   - **RESOLUTION:** CONTEXT.md D-05 and Plan 02-01 include a `user_setup` prerequisite requiring `APPLE_TEAM_ID`, `APPLE_KEY_ID`, and `APPLE_PRIVATE_KEY` to be set in `.env.local` before Wave 1 runs. Plan 02-01 has a Wave 0 Task 0 (`checkpoint:human-action`) that verifies these three env vars are set before the DB schema task runs. If any are missing, the executor halts and prompts the human to add them per the dashboard-config block in 02-01's `user_setup` frontmatter. Without these credentials, the developer token cannot be generated and the Apple Music API is inaccessible — no fallback is possible for IMPORT-01/07.
 
 ---
 
@@ -719,12 +719,12 @@ LASTFM_API_KEY=your_lastfm_api_key
 | `zod` npm package | Description parsing | ✓ | ^4.0.0 (installed) | — |
 | `drizzle-orm` | Database writes | ✓ | 0.45.2 (installed) | — |
 | `@libsql/client` | libSQL driver | ✓ | 0.17.3 (installed) | — |
-| Apple Developer account credentials | APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY | ? | — | None — blocking |
+| Apple Developer account credentials | APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY | ? | — | None — blocking (Wave 0 checkpoint in Plan 02-01) |
 | LASTFM_API_KEY | Last.fm enrichment | ? | — | Skip enrichment (graceful degrade — tracks stored without genre tags) |
 | MusicKit JS v3 CDN | Browser authorization | External CDN | v3 | None — required for IMPORT-01/07 |
 
 **Missing dependencies with no fallback:**
-- Apple Developer Program credentials — Wave 0 must verify these exist in `.env.local` before any import code runs. Without them, the developer token cannot be generated and the Apple Music API is inaccessible.
+- Apple Developer Program credentials — Plan 02-01 Wave 0 (Task 0, `checkpoint:human-action`) verifies these exist in `.env.local` before any import code runs. Without them, the developer token cannot be generated and the Apple Music API is inaccessible.
 
 **Missing dependencies with fallback:**
 - `LASTFM_API_KEY` — if unset, log a warning and skip the enrichment step; `artistTags` table remains empty; Phase 4 analytics gracefully handles empty tag data

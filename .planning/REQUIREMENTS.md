@@ -4,13 +4,13 @@
 
 ### Import
 
-- [ ] **IMPORT-01**: Admin user (Mark) can connect their Spotify account via OAuth to authorise playlist access
-- [ ] **IMPORT-02**: App can import all playlists from the connected Spotify account that match the session naming convention (session number in name)
+- [ ] **IMPORT-01**: Admin user (Mark) can connect their Apple Music account via MusicKit JS authorize flow to authorise playlist access
+- [ ] **IMPORT-02**: App can import all playlists from the connected Apple Music account that match the session naming convention (session number in name)
 - [ ] **IMPORT-03**: App parses contributor order from playlist description initials (e.g. "MW, JG, JS, IT") and attributes each group of 4 tracks to the correct person
 - [ ] **IMPORT-04**: App correctly handles the theme-chooser-first ordering rule when assigning attribution (first person in initials string = tracks 1–4, etc.)
 - [ ] **IMPORT-05**: Admin user can enter or edit the date for each session via the dashboard
 - [ ] **IMPORT-06**: App fetches genre/artist tags from Last.fm or MusicBrainz for each track's primary artist and stores them locally for analytics
-- [ ] **IMPORT-07**: Admin user can connect Apple Music via MusicKit JS and import the same 31 sessions from Apple Music as a secondary data source
+- [ ] **IMPORT-07**: Admin user can connect Apple Music via MusicKit JS and import the 31 sessions from Apple Music as the primary import source (Spotify deferred — no Spotify Premium available)
 - [ ] **IMPORT-08**: App gracefully flags sessions where the description does not contain a valid initials string, surfacing them for manual review rather than silently failing
 
 ### Browsing

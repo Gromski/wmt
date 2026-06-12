@@ -53,19 +53,32 @@ Plans:
 
 ### Phase 2: Import Pipeline
 
-**Goal**: All 31 sessions are imported from Spotify, tracks correctly attributed to each person, enriched with genre/artist tags, and dates enterable by the admin
+**Goal**: All 31 sessions are imported from Apple Music (per CONTEXT.md D-01 — Spotify import deferred to Phase 3 because Spotify Feb 2026 Dev Mode changes plus no Spotify Premium prevent owner playlist fetch), tracks correctly attributed to each person, enriched with genre/artist tags from Last.fm, and dates enterable by the admin
 **Mode:** mvp
 **Depends on**: Phase 1
 **Requirements**: IMPORT-01, IMPORT-02, IMPORT-03, IMPORT-04, IMPORT-05, IMPORT-06, IMPORT-07, IMPORT-08
 **Success Criteria** (what must be TRUE):
 
-  1. Admin can connect their Spotify account via OAuth and trigger import of all matching playlists
+  1. Admin can connect their Apple Music account via MusicKit JS authorisation and trigger import of all matching playlists (IMPORT-01 reinterpreted per pivot — Spotify deferred to Phase 3)
   2. Each of the 16 tracks per session is attributed to the correct person based on initials in the description and the 4-track grouping rule
   3. Admin can enter or edit the date for each session via the dashboard
-  4. Genre and artist tags are fetched from Last.fm or MusicBrainz and stored locally for each track's primary artist
+  4. Genre and artist tags are fetched from Last.fm and stored locally for each track's primary artist
   5. Sessions with missing or unparseable initials strings are flagged for manual review rather than silently failing
 
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Foundation: extend Drizzle schema with sessions/contributors/tracks/session_tracks/artist_tags + BLOCKING `npm run db:push`; build `lib/apple-dev-token.ts` (ES256 JWT) and `GET /api/apple-token` admin-only token vendor; declare `types/musickit.d.ts` global; install Table/Alert/Select/Progress/Tooltip shadcn primitives
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — Apple Music import vertical slice: replace `/api/import` stub with SSE streaming handler (paginate library playlists → fetch tracks with `?include=catalog` → parse initials → batch replace-all → Last.fm enrichment); replace ImportTriggerCard with MusicKit JS v3 browser flow + Progress bar + status line; closes IMPORT-01..04, IMPORT-06..08 data-level
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-03-PLAN.md — Admin editor slice + end-to-end human verify: `PATCH /api/sessions/[id]` for date entry and `PATCH /api/sessions/[id]/attribution` for manual contributor assignment; SessionDateTable (inline 31-row date inputs, blur-to-save) and AttributionErrorCard (4-slot Select dropdowns per errored session); dashboard wiring; closes IMPORT-05 + IMPORT-08 UI; blocking human-verify of full Phase 2 happy path
+
 **UI hint**: yes
 
 ### Phase 3: Archive Browsing
@@ -109,6 +122,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
-| 2. Import Pipeline | 0/TBD | Not started | - |
+| 2. Import Pipeline | 0/3 | Not started | - |
 | 3. Archive Browsing | 0/TBD | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |
