@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 1 UI-SPEC approved
-last_updated: "2026-06-12T14:08:26.471Z"
-last_activity: 2026-06-12 -- Phase 01 planning complete
+last_updated: "2026-06-12T16:22:58.505Z"
+last_activity: 2026-06-12
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 01 (access-shell) — EXECUTING
-Plan: 1 of 4
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 01 planning complete
+Last activity: 2026-06-12
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 25%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01-access-shell P01 | 45 | 3 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -60,7 +61,10 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- None yet.
+-
+
+- [Phase ?]: Use npm instead of pnpm — user chose npm at Task 1 checkpoint
+- [Phase ?]: shadcn v4 radix-nova preset used instead of new-york (v3 style removed in v4.11.0)
 
 ### Pending Todos
 
@@ -78,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-12T10:10:28.209Z
+Last session: 2026-06-12T16:22:58.501Z
 Stopped at: Phase 1 UI-SPEC approved
-Resume file: .planning/phases/01-access-shell/01-UI-SPEC.md
+Resume file: None
