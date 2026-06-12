@@ -13,7 +13,9 @@ export function DashboardSignOut() {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => router.push("/sign-in"),
-        onError: () => { toast.error("Sign-out failed. Please try again."); }, // WR-02
+        onError: () => {
+          toast.error("Sign-out failed. Please try again.");
+        }, // WR-02
       },
     });
   }
