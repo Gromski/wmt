@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Import trigger, date editing, and write operations are hidden from unauthenticated users (and from non-admin authenticated users for the import trigger)
   4. Admin can trigger a re-import or sync from within the authenticated dashboard
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 Plans:
 **Wave 1**
 
@@ -45,7 +45,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-02-PLAN.md — Authenticated vertical slice: GlobalHeader with conditional Sign in / Avatar+Sign out, `/sign-in` page with combined sign-in + sign-up form (Zod-validated email+password) calling `authClient.signIn.email`/`authClient.signUp.email`, dashboard Server Component with signed-in confirmation + Admin badge; proves email/password round trip end-to-end (exercises proxy.ts from 01-01b for the first time)
+- [x] 01-02-PLAN.md — Authenticated vertical slice: GlobalHeader with conditional Sign in / Avatar+Sign out, `/sign-in` page with combined sign-in + sign-up form (Zod-validated email+password) calling `authClient.signIn.email`/`authClient.signUp.email`, dashboard Server Component with signed-in confirmation + Admin badge; proves email/password round trip end-to-end (exercises proxy.ts from 01-01b for the first time)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -108,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Access & Shell | 3/4 | In Progress|  |
+| 1. Access & Shell | 3/4 | In Progress | - |
 | 2. Import Pipeline | 0/TBD | Not started | - |
 | 3. Archive Browsing | 0/TBD | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |

@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: 01-01b Walking Skeleton wiring complete — human-verify approved, ready for 01-02
+status: verifying
+stopped_at: 01-02 Authenticated vertical slice complete — human-verify approved, ready for 01-03
 last_updated: "2026-06-12T17:00:00.000Z"
 last_activity: 2026-06-12
 progress:
@@ -11,7 +11,7 @@ progress:
   completed_phases: 0
   total_plans: 4
   completed_plans: 3
-  percent: 25
+  percent: 75
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 01 (access-shell) — EXECUTING
-Plan: 4 of 4 (01-01, 01-01b complete, next: 01-02)
-Status: Ready to execute
+Plan: 4 of 4 (01-01, 01-01b, 01-02 complete, next: 01-03)
+Status: Executing — ready for 01-03
 Last activity: 2026-06-12
 
-Progress: [███████░░░] 75%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [███████░░░] 75%
 *Updated after each plan completion*
 | Phase 01-access-shell P01 | 45 | 3 tasks | 19 files |
 | Phase 01-access-shell P01b | 8 | 4 tasks + 1 checkpoint | 12 files |
+| Phase 01-access-shell P02 | 45 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,9 @@ Recent decisions affecting current work:
 - [Phase 1, Plan 01-01b]: role column uses text with enum constraint (not Better Auth admin plugin) per RESEARCH.md Pitfall 2
 - [Phase 1, Plan 01-01b]: databaseHooks.user.create.before hook (not after) for atomic first-user-admin assignment
 - [Phase 1, Plan 01-01b]: proxy.ts matcher is ['/dashboard', '/dashboard/:path*'] — public routes excluded per D-04
+- [Phase 1, Plan 01-02]: Biome lint fixes committed separately after implementation tasks — import ordering and formatter applied in one pass across Tasks 1-2 files
+- [Phase 1, Plan 01-02]: Server Component session read pattern established — auth.api.getSession({ headers: await headers() }) with defence-in-depth redirect('/sign-in') if null
+- [Phase 1, Plan 01-02]: Sign-out island pattern established — DashboardSignOut.tsx minimal Client Component wraps authClient.signOut for use inside Server Component pages
 
 ### Pending Todos
 
@@ -89,5 +93,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-12T17:00:00.000Z
-Stopped at: 01-01b Walking Skeleton wiring complete — human-verify approved, ready for 01-02
+Stopped at: 01-02 Authenticated vertical slice complete — human-verify approved, ready for 01-03
 Resume file: None
