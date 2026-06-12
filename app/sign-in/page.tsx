@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, LogIn } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { authClient } from "@/lib/auth-client";
-import {
-  Button,
-} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { authClient } from "@/lib/auth-client";
 
 const signInSchema = z.object({
   email: z.string().email(),
@@ -80,7 +78,9 @@ export default function SignInPage() {
           onSuccess: () => router.push("/dashboard"),
           onError: (ctx) => {
             setIsPending(false);
-            toast.error(ctx.error.message ?? "Sign-up failed. Please try again.");
+            toast.error(
+              ctx.error.message ?? "Sign-up failed. Please try again.",
+            );
           },
         },
       );

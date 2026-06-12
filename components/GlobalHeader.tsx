@@ -1,11 +1,11 @@
 "use client";
 
+import { LogIn, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogIn, LogOut } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 
 function getInitials(name: string): string {
   const tokens = name.trim().split(/\s+/).slice(0, 2);
@@ -31,7 +31,12 @@ export function GlobalHeader() {
 
         <nav className="flex items-center gap-3">
           {!isPending && !session && (
-            <Button asChild variant="default" size="sm" className="min-h-[44px]">
+            <Button
+              asChild
+              variant="default"
+              size="sm"
+              className="min-h-[44px]"
+            >
               <Link href="/sign-in">
                 <LogIn className="h-4 w-4 mr-2" />
                 Sign in
@@ -42,7 +47,9 @@ export function GlobalHeader() {
           {!isPending && session && (
             <>
               <Avatar className="h-8 w-8">
-                <AvatarFallback>{getInitials(session.user.name)}</AvatarFallback>
+                <AvatarFallback>
+                  {getInitials(session.user.name)}
+                </AvatarFallback>
               </Avatar>
               <span className="text-sm">{session.user.name}</span>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
