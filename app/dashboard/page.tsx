@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { DashboardSignOut } from "@/components/DashboardSignOut";
+import { ImportTriggerCard } from "@/components/ImportTriggerCard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -49,7 +50,11 @@ export default async function DashboardPage() {
 
       <Separator className="my-8" />
 
-      {/* Plan 01-03 will render the admin-only Sync sessions Card here. */}
+      {isAdmin && (
+        <section className="mt-8">
+          <ImportTriggerCard />
+        </section>
+      )}
 
       <div className="mt-8">
         <DashboardSignOut />
