@@ -57,7 +57,7 @@ completed: 2026-06-12
 - **Duration:** ~20 min
 - **Started:** 2026-06-12T17:00:00Z
 - **Completed:** 2026-06-12T17:20:00Z
-- **Tasks:** 2 auto (+ 1 human-verify checkpoint — awaiting approval)
+- **Tasks:** 2 auto (+ 1 human-verify checkpoint — approved 2026-06-12)
 - **Files modified:** 3
 
 ## Accomplishments
@@ -73,14 +73,14 @@ completed: 2026-06-12
   - Sonner success toast: "Import queued" on 202; specific error toasts for 401/403/other
 - `app/dashboard/page.tsx` — placeholder comment replaced with `{isAdmin && <section><ImportTriggerCard /></section>}` — non-admin dashboards receive no import Card markup server-side
 
-## Human Verify (Awaiting Approval)
+## Human Verify (Approved 2026-06-12)
 
-Verification steps A/B/C/D from Task 3 checkpoint are pending human approval. Expected outcomes:
+All verification steps A/B/C/D from Task 3 checkpoint were approved by the user on 2026-06-12. Confirmed outcomes:
 
-- **A (401):** `curl -i -X POST http://localhost:3000/api/import` → `HTTP/1.1 401` + `{"error":"Unauthorized"}`
-- **B (403 + no Card for Jack):** Signed in as Jack (member) → no "Sync sessions" Card on dashboard; curl with Jack's cookie → `HTTP/1.1 403` + `{"error":"Forbidden"}`
-- **C (202 + UI happy path for Mark):** Signed in as Mark (admin) → "Sync sessions" Card with violet "Start import" button; click → "Importing…" spinner → Sonner toast "Import queued" → button returns to default
-- **D (spot checks):** `/` accessible without auth; `/dashboard` without auth → 307 redirect to `/sign-in`
+- **A (401 — confirmed):** `curl -i -X POST http://localhost:3000/api/import` → `HTTP/1.1 401` + `{"error":"Unauthorized"}`
+- **B (403 + no Card for Jack — confirmed):** Signed in as Jack (member) → no "Sync sessions" Card on dashboard; curl with Jack's cookie → `HTTP/1.1 403` + `{"error":"Forbidden"}`
+- **C (202 + UI happy path for Mark — confirmed):** Signed in as Mark (admin) → "Sync sessions" Card with violet "Start import" button; click → "Importing…" spinner → Sonner toast "Import queued" → button returns to default
+- **D (spot checks — confirmed):** `/` accessible without auth; `/dashboard` without auth → 307 redirect to `/sign-in`
 
 ## Task Commits
 

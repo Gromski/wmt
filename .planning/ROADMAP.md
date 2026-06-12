@@ -13,7 +13,7 @@ Four phases take the project from a standing start to a fully-interrogable archi
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Access & Shell** - Authenticated private dashboard and public read-only URL
+- [x] **Phase 1: Access & Shell** - Authenticated private dashboard and public read-only URL
 - [ ] **Phase 2: Import Pipeline** - Spotify/Apple Music import, attribution parsing, enrichment, date entry
 - [ ] **Phase 3: Archive Browsing** - Session list, track detail, timeline, search and filter
 - [ ] **Phase 4: Analytics** - Taste profiles, group overlap, wildcard detection, Wrapped cards
@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Import trigger, date editing, and write operations are hidden from unauthenticated users (and from non-admin authenticated users for the import trigger)
   4. Admin can trigger a re-import or sync from within the authenticated dashboard
 
-**Plans:** 4/4 plans executed (Phase 1 complete — awaiting final human-verify)
+**Plans:** 4/4 plans executed and human-verified (Phase 1 complete 2026-06-12)
 Plans:
 **Wave 1**
 
@@ -108,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Access & Shell | 4/4 | Verifying | - |
+| 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 0/TBD | Not started | - |
 | 3. Archive Browsing | 0/TBD | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |
