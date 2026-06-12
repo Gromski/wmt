@@ -1,8 +1,8 @@
 # Phase 2: Import Pipeline - Research
 
 **Researched:** 2026-06-12
-**Domain:** Spotify Web API (Client Credentials + User OAuth), Last.fm tagging API, Drizzle schema extension, Next.js streaming Route Handlers
-**Confidence:** MEDIUM (one critical API constraint changes the locked decision D-01/D-02 — see Open Questions)
+**Domain:** Apple Music API (MusicKit JS v3), Last.fm API, Drizzle ORM batch operations, Next.js streaming responses
+**Confidence:** HIGH
 
 ---
 
@@ -11,31 +11,32 @@
 
 ### Locked Decisions
 
-- **D-01:** Use Spotify Client Credentials flow (server-side) — POST to `https://accounts.spotify.com/api/token` with `grant_type=client_credentials` using `SPOTIFY_CLIENT_ID` + `SPOTIFY_CLIENT_SECRET` env vars. No user OAuth, no Spotify Premium required. Playlists are public.
-- **D-02:** Identify playlists via Mark's Spotify user ID — call `GET /users/{user_id}/playlists` (Client Credentials can list a user's public playlists). `SPOTIFY_USER_ID` stored as an env var.
+- **D-01:** Use MusicKit JS (browser-based) — Mark authorises once via `MusicKit.getInstance().authorize()` in the ImportTriggerCard. The user music token is sent to a server-side API route which calls Apple Music API on his behalf.
+- **D-02:** Identify playlists via `GET /v1/me/library/playlists` (user-authenticated, paginated). Filter by naming convention to identify the 31 sessions.
 - **D-03:** Session name pattern matching: Claude's discretion — extract session number from playlist name using regex; theme from description.
 - **D-04:** Re-import behaviour: replace-all — on each import trigger, truncate `session_tracks`, `tracks`, and `sessions` tables then re-insert. Simple, safe, admin-only.
-- **D-05:** Apple Music import (IMPORT-07) deferred to Phase 3. Phase 2 = Spotify only.
-- **D-06:** Use Last.fm `artist.getTopTags` endpoint — free, no auth, returns community folksonomy tags. `LASTFM_API_KEY` env var.
+- **D-05:** Apple Music developer token: JWT signed with ES256, generated server-side from the Apple Developer key (`APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` env vars). Short-lived token (max 6 months, generated fresh per import run via `jose`).
+- **D-06 (genre):** Use Last.fm `artist.getTopTags` endpoint — free, no auth, returns community folksonomy tags. `LASTFM_API_KEY` env var.
 - **D-07:** Enrich per unique artist (deduplicated across all tracks) — one API call per unique artist.
 - **D-08:** Store top 5 tags per artist in an `artist_tags` table. Tags reused across all tracks by that artist.
-- **D-09:** Enrich during import — after all tracks are inserted, run enrichment in the same request chain.
-- **D-10:** Date entry lives on `/dashboard` as an inline table — all 31 sessions visible with a native `<input type="date">` per row, saved on blur/Enter.
+- **D-09:** Enrich during import — after all tracks are inserted, run enrichment in the same request chain. No separate "enrich" button.
+- **D-10:** Date entry lives on `/dashboard` as an inline table — all 31 sessions visible with a native `<input type="date">` per row, saved on blur/Enter. No separate page.
 - **D-11:** Attribution error display — a warning card section on `/dashboard` lists sessions where the description did not contain a valid initials string. Admin can manually assign contributor order via a slot-based UI.
-- **D-12:** Contributor order: theme-chooser first, then alphabetical surname (Groves, Slade, Thomas, Wright). MW=Mark Wright, JG=Jack Groves, JS=Jon Slade, IT=Iwan Thomas.
+- **D-12:** The contributor order follows the project rule: theme-chooser first, then alphabetical surname (Groves, Slade, Thomas, Wright). Mark's initials are MW, Jack's JG, Jon's JS, Iwan's IT.
 
 ### Claude's Discretion
 
-- Exact regex pattern for matching session playlists from the user's Spotify library
+- Exact regex pattern for matching session playlists from the user's Apple Music library
 - Rate limiting strategy for Last.fm API (max 5 req/sec)
 - Exact Drizzle schema for `sessions`, `tracks`, `session_tracks`, `contributors`, `artist_tags` tables
 - Error handling when individual playlist or track fetches fail
+- MusicKit JS version to load (use v3 from `js-cdn.music.apple.com/musickit/v3/musickit.js` per CLAUDE.md)
 
 ### Deferred Ideas (OUT OF SCOPE)
 
-- Apple Music import (IMPORT-07) — deferred to Phase 3
-- Advanced import scheduling / background jobs
-- CSV export of imported data
+- Spotify import — deferred; Spotify Client Credentials broken by Feb 2026 Dev Mode changes; user OAuth requires Premium (Mark has none). Spotify track IDs for Phase 3 links if needed.
+- Advanced import scheduling / background jobs — not needed for 31-session one-time import
+- CSV export of imported data — out of scope
 </user_constraints>
 
 ---
@@ -45,27 +46,27 @@
 
 | ID | Description | Research Support |
 |----|-------------|------------------|
-| IMPORT-01 | Admin user can connect their Spotify account via OAuth to authorise playlist access | D-01 clarified: Client Credentials cannot list playlists or fetch items after Feb 2026 — see Critical Finding. Requires Better Auth Spotify social provider OR hardcoded playlist IDs. |
-| IMPORT-02 | App can import all playlists matching session naming convention | Session name regex pattern researched; playlist discovery requires user OAuth or known IDs (D-02 impacted by Feb 2026 API removal). |
-| IMPORT-03 | App parses contributor order from playlist description initials | Regex parsing pattern defined; Zod validation schema provided. |
-| IMPORT-04 | App correctly handles theme-chooser-first ordering rule | Attribution logic: slots 1–4, 5–8, 9–12, 13–16 map to positions 0–3 in initials array. |
-| IMPORT-05 | Admin can enter or edit session date via dashboard | Native `<input type="date">` in inline table; PATCH API route to `sessions` table. |
-| IMPORT-06 | App fetches genre/artist tags from Last.fm and stores locally | Last.fm `artist.getTopTags` endpoint researched; `artist_tags` table schema defined; 5 req/sec rate limit confirmed. |
-| IMPORT-07 | Apple Music import | DEFERRED to Phase 3 — no research performed. |
-| IMPORT-08 | App gracefully flags sessions with no valid initials string | Attribution error card in UI-SPEC; `attribution_status` column tracks parse success; manual override API route. |
+| IMPORT-01 | Admin user can connect Apple Music via MusicKit JS (pivot from Spotify) | MusicKit JS v3 CDN + `authorize()` flow documented; user music token passed to server route |
+| IMPORT-02 | App can import all playlists matching the session naming convention | `GET /v1/me/library/playlists` pagination pattern; regex filter on playlist name |
+| IMPORT-03 | App parses contributor order from playlist description initials (e.g. "MW, JG, JS, IT") | Description lives at `attributes.description.standard` (nested object); Zod regex validation pattern |
+| IMPORT-04 | App correctly handles the theme-chooser-first ordering rule when assigning attribution | First initials string entry = tracks 1–4; no special API call — pure JS ordering logic |
+| IMPORT-05 | Admin user can enter or edit the date for each session via the dashboard | PATCH API route + shadcn Table with native date inputs; inline save pattern |
+| IMPORT-06 | App fetches genre/artist tags from Last.fm for each track's primary artist | Last.fm `artist.getTopTags` — free, no auth; 5 req/sec limit; response always 200, check body |
+| IMPORT-07 | Admin user can connect Apple Music via MusicKit JS and import the 31 sessions | This IS the primary import; MusicKit JS v3 browser flow + server-side Apple Music API proxy |
+| IMPORT-08 | App gracefully flags sessions where description doesn't contain a valid initials string | Sessions stored with `attributionParsed: false`; shown in Attribution Error Card on dashboard |
 </phase_requirements>
 
 ---
 
 ## Summary
 
-Phase 2 populates the database from Spotify and adds admin dashboard tooling for date entry and attribution correction. The research surface is three distinct domains: Spotify API access patterns post-February 2026, Last.fm genre enrichment, and Drizzle schema extension.
+Phase 2 builds the data import pipeline that populates the database from Mark's Apple Music library. The flow has three distinct tiers: (1) a browser-side MusicKit JS v3 authorization step where Mark authenticates with Apple Music and obtains a Music User Token; (2) a server-side Next.js API route that receives the user token, generates a developer JWT via `jose`, and calls the Apple Music API to fetch all 31 session playlists and their 16 tracks each; (3) a Last.fm enrichment pass that tags each unique artist with up to 5 community-generated genre tags.
 
-**Critical finding — D-01 and D-02 are impacted by February 2026 API changes.** The `GET /users/{user_id}/playlists` endpoint was **removed** in Dev Mode in February 2026 and cannot be used regardless of auth method. The `GET /playlists/{id}/items` endpoint returns playlist contents only for playlists owned by the authenticated user — Client Credentials (no user context) returns metadata only, not track items. This means the locked decision to use purely Client Credentials for discovery and item fetching is not viable as-is. Two practical solutions exist (described in Open Questions); the planner should flag this for user decision before writing tasks that assume D-02.
+The technical domain is well-understood but has two specific pitfalls worth highlighting. First, MusicKit JS is strictly browser-only — the CDN script registers `window.MusicKit` and must be loaded in a Client Component; the Music User Token it produces is then forwarded to a server route where all Apple Music API calls happen. Second, the library-songs resource returned by the tracks endpoint does not include ISRC; to get catalog-level metadata (ISRC, release year), the tracks fetch must include `?include=catalog` to pull the related catalog song object alongside each library song.
 
-Everything else in the phase is well-understood: Last.fm's `artist.getTopTags` is a simple unauthenticated GET requiring only an API key; the Drizzle schema patterns established in Phase 1 extend directly to the new tables; the Next.js streaming Route Handler pattern is confirmed in the Next.js 16 docs and handles the progress feedback requirement from the UI-SPEC.
+The import pipeline uses Server-Sent Events (SSE) via a `ReadableStream` response to push progress updates back as each playlist is processed. The Vercel Hobby plan's default function timeout is 300 seconds (confirmed from 2026-05-14 Vercel docs — significantly more than older articles claimed), which is ample for 31 sequential playlist fetches. SSE is still the right pattern for UX responsiveness regardless of the timeout headroom.
 
-**Primary recommendation:** Use Better Auth's Spotify social provider to get Mark's OAuth `access_token` at import time (it's stored in the `account` table already when he signs in). Use that token with `GET /me/playlists` + `GET /playlists/{id}/items`. This requires adding the Spotify social provider to `lib/auth.ts` — a small but required addition.
+**Primary recommendation:** Load MusicKit JS v3 in a `"use client"` component, get the Music User Token via `MusicKit.getInstance().authorize()`, POST it to `/api/import`, then server-side iterate playlists and tracks using the two-header Apple Music API pattern (`Authorization: Bearer <devtoken>` + `Music-User-Token: <usertoken>`). No new npm packages needed — `jose` is already installed.
 
 ---
 
@@ -73,80 +74,64 @@ Everything else in the phase is well-understood: Last.fm's `artist.getTopTags` i
 
 | Capability | Primary Tier | Secondary Tier | Rationale |
 |------------|-------------|----------------|-----------|
-| Spotify token exchange (Client Credentials) | API / Backend | — | Client secret must never be browser-exposed; server-only |
-| Spotify playlist discovery (`GET /me/playlists`) | API / Backend | — | Requires user OAuth token stored server-side in `account` table |
-| Playlist item fetch (`GET /playlists/{id}/items`) | API / Backend | — | Auth token required; server controls rate-limiting and error handling |
-| Import orchestration (loop, DB writes) | API / Backend | — | Long-running operation; streaming response back to client |
-| Last.fm tag enrichment | API / Backend | — | Sequential after track insert; no user auth needed |
-| Import progress feedback | Browser / Client | API/Backend (streaming) | `ReadableStream` SSE from Route Handler; client consumes EventSource |
-| Session date PATCH | API / Backend | — | Simple DB write; admin-gated |
-| Attribution manual override | API / Backend | — | Admin-gated PATCH to `session_tracks` |
-| Dashboard session table | Frontend Server (SSR) | Browser/Client | Initial render SSR; inline date inputs are Client Component islands |
-| Attribution error card | Browser / Client | — | Select dropdowns and save action require client state |
-| DB schema (`sessions`, `tracks`, `session_tracks`, `contributors`, `artist_tags`) | Database / Storage | — | Drizzle schema + `drizzle-kit push` |
+| MusicKit JS load + configure | Browser / Client | — | CDN script sets `window.MusicKit`; cannot run server-side |
+| Apple Music user authorization | Browser / Client | — | `authorize()` opens Apple's popup; requires user interaction |
+| Developer JWT generation (ES256) | API / Backend | — | Private key must never be exposed client-side |
+| Apple Music API calls (playlists, tracks) | API / Backend | — | Two-header auth requires developer token which is server-only |
+| Last.fm enrichment | API / Backend | — | Server-to-server; no user credential needed |
+| Database writes (sessions, tracks, tags) | API / Backend | Database / Storage | Drizzle ORM batch insert via libSQL |
+| Import progress feedback | API / Backend | Browser / Client | SSE ReadableStream pushes progress events; client reads via `getReader()` |
+| Session date entry | Browser / Client | API / Backend | Client date input triggers PATCH to `/api/sessions/[id]` |
+| Attribution error display | Browser / Client | API / Backend | Dashboard reads sessions with `attributionParsed = false` from DB |
+| Developer token vending | API / Backend | — | `/api/apple-token` GET returns short-lived JWT to browser for MusicKit.configure |
 
 ---
 
 ## Standard Stack
 
-### Core (already installed in Phase 1)
+### Core
 
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| `drizzle-orm` | 0.45.2 [VERIFIED: npm registry] | DB ORM | Already in project; schema extension follows established patterns |
-| `drizzle-kit` | 0.31.10 [VERIFIED: npm registry] | Schema migrations | Already in project; `npm run db:push` pattern established |
-| `next` | 16.2.9 [VERIFIED: npm registry] | Framework | Route Handler streaming confirmed in v16 official docs |
-| `zod` | 4.x [VERIFIED: npm registry] | Validation | Already installed; used for initials string parsing, API input validation |
-| `better-auth` | 1.6.17 [VERIFIED: npm registry] | Auth | Already installed; Spotify social provider needs to be added to `lib/auth.ts` |
-| `sonner` | 1.x [VERIFIED: npm registry] | Toasts | Already installed; used for import success/error |
+| `jose` | ^6.2.3 (installed) | ES256 JWT signing for Apple developer token | Official panva/jose library [VERIFIED: npm registry] [OK] slopcheck; panva is the de facto JOSE standard for Node.js; already in project |
+| MusicKit JS v3 | CDN (no npm pkg) | Browser-based Apple Music authorization + user token | Apple's official web SDK; no npm equivalent — load via script tag |
+| `zod` | ^4.0.0 (installed) | Parse and validate playlist description, session metadata | Already in project; v4 is 14x faster than v3; Zod `.safeParse()` essential for untyped API responses |
+| `drizzle-orm` | 0.45.2 (installed) | Database ORM — batch insert, delete, select | Already in project; `db.batch()` supports implicit transaction for truncate + re-insert pattern |
 
-### New Packages Required
+### No New Packages Required
+
+All libraries needed for Phase 2 are already installed in the project. The only new integration is the MusicKit JS CDN script (not an npm package).
+
+### Supporting (already installed, no changes needed)
 
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| `@spotify/web-api-ts-sdk` | 1.2.0 [VERIFIED: npm registry] | Spotify API client | For `sdk.playlists.getUsersPlaylists()` and `sdk.playlists.getPlaylistItems()` — **with caveat: see Package Legitimacy Audit** |
+| `@libsql/client` | 0.17.3 | libSQL driver for Drizzle | Required for `db.batch()` and all DB operations |
+| `lucide-react` | ^1.18.0 | Icons in ImportTriggerCard states | Loader2, Check, AlertCircle icons |
+| `sonner` | ^1.7.4 | Toast notifications for import outcomes | Import success/failure toasts |
+| `better-auth` | 1.6.17 | Session gate for import route | `auth.api.getSession()` guard already established in Phase 1 |
 
-**CRITICAL SDK CAVEAT:** The `@spotify/web-api-ts-sdk` at version 1.2.0 (published Jan 2024) uses the old `/playlists/{id}/tracks` endpoint path internally, which was renamed to `/playlists/{id}/items` in February 2026. This means `sdk.playlists.getPlaylistItems()` may return 404 or incorrect results in Dev Mode. [VERIFIED: GitHub issue #159, Feb 2026 changelog]
+### Installation
 
-**Recommendation:** Use the SDK for `SpotifyApi.withAccessToken()` authentication wrappers and typed responses, but call `GET /playlists/{id}/items` directly via `fetch` for the items endpoint to ensure the correct URL path is used. Alternatively, bypass the SDK entirely and use `fetch` with typed response shapes modelled from the SDK's TypeScript types.
-
-### Supporting (already installed)
-
-All shadcn components needed by UI-SPEC are either already installed or require only `npx shadcn add`:
-- `table`, `alert`, `select`, `progress`, `tooltip` — new installs per UI-SPEC
-
-**Installation for new shadcn components:**
-```bash
-npx shadcn add table alert select progress tooltip
-```
-
-**Installation for Spotify SDK (if using):**
-```bash
-npm install @spotify/web-api-ts-sdk
-```
-
-**Version verification:**
-```bash
-npm view @spotify/web-api-ts-sdk version   # returns 1.2.0 as of 2026-06-12
-```
+No new packages to install for Phase 2.
 
 ---
 
 ## Package Legitimacy Audit
 
-> slopcheck was unavailable at research time. All packages below are tagged `[ASSUMED]` for download/age data; registry existence was confirmed via `npm view`.
+No new packages are introduced in Phase 2. All packages carry their Phase 1 legitimacy status.
 
-| Package | Registry | Age | Downloads | Source Repo | slopcheck | Disposition |
-|---------|----------|-----|-----------|-------------|-----------|-------------|
-| `@spotify/web-api-ts-sdk` | npm | ~2.5 yrs | high (official Spotify SDK) | github.com/spotify/spotify-web-api-ts-sdk [VERIFIED: npm view] | not run | Approved with caveat — see Standard Stack SDK warning |
+| Package | Registry | slopcheck | Disposition |
+|---------|----------|-----------|-------------|
+| `jose` | npm | [OK] | Approved — already installed |
+| `zod` | npm | [OK] | Approved — already installed |
+| `drizzle-orm` | npm | [OK] | Approved — already installed |
+| `better-auth` | npm | [OK] | Approved — already installed |
+| `next` | npm | [OK] | Approved — already installed |
 
 **Packages removed due to slopcheck [SLOP] verdict:** none
 
 **Packages flagged as suspicious [SUS]:** none
-
-**Note:** All other packages required for Phase 2 are already installed from Phase 1. The only new npm package is `@spotify/web-api-ts-sdk`. This is the official SDK from Spotify's own GitHub organisation — legitimacy is HIGH confidence regardless of slopcheck.
-
-*slopcheck was unavailable at research time; the above package is tagged `[ASSUMED]` for download statistics but the source repo is verified as `github.com/spotify/spotify-web-api-ts-sdk` via npm view.*
 
 ---
 
@@ -155,106 +140,233 @@ npm view @spotify/web-api-ts-sdk version   # returns 1.2.0 as of 2026-06-12
 ### System Architecture Diagram
 
 ```
-Admin (Mark)
-    │
-    ▼ POST /api/import
-┌─────────────────────────────────────────────────┐
-│  Route Handler (app/api/import/route.ts)         │
-│  auth guard → admin check                        │
-│                                                  │
-│  1. Get Mark's Spotify OAuth token               │
-│     └─ db.select(account) WHERE userId=Mark,     │
-│           providerId='spotify'                   │
-│                                                  │
-│  2. Fetch playlists                              │
-│     └─ GET /me/playlists (paginated, limit=50)   │
-│           └─ filter by session name regex        │
-│                                                  │
-│  3. For each matched playlist (≤31):             │
-│     └─ GET /playlists/{id}/items (paginated)     │
-│           └─ parse description → initials        │
-│           └─ insert sessions + tracks + attrs    │
-│                                                  │
-│  4. Last.fm enrichment                           │
-│     └─ unique artists → artist.getTopTags        │
-│           (≤5 req/sec rate limit)                │
-│           └─ insert artist_tags                  │
-│                                                  │
-│  5. Stream progress events throughout            │
-│     └─ ReadableStream (text/event-stream)        │
-└─────────────────────────────────────────────────┘
-         │ streaming SSE chunks
-         ▼
-ImportTriggerCard (Client Component)
-    └─ EventSource / fetch reader → progress bar + status line
-
-Admin PATCH /api/sessions/{id}/date
-    └─ auth guard → update sessions.date_played
-
-Admin PATCH /api/sessions/{id}/attribution
-    └─ auth guard → update session_tracks.attributed_user_id
+Browser (Client Component: ImportTriggerCard)
+  │
+  │  1. GET /api/apple-token  →  short-lived developer JWT
+  │  2. Load MusicKit JS v3 CDN (next/script, strategy="afterInteractive")
+  │  3. window.MusicKit.configure({ developerToken })
+  │  4. window.MusicKit.getInstance().authorize()  →  Music User Token
+  │
+  │  POST /api/import { musicUserToken }
+  ▼
+Next.js API Route (/api/import) — ReadableStream SSE
+  │
+  ├── Auth gate: session check → 401 / role check → 403
+  ├── Generate developer JWT (jose ES256, server-side env vars)
+  │
+  ├── GET /v1/me/library/playlists (paginate limit=100)
+  │   Filter: name matches session naming convention
+  │   → 31 matched playlists
+  │
+  ├── For each playlist (31 iterations):
+  │   ├── GET /v1/me/library/playlists/{id}/tracks?include=catalog&limit=100
+  │   ├── Extract: name, artistName, albumName, durationMs, trackNumber
+  │   ├── Extract: catalog.attributes.isrc, catalog.attributes.releaseDate
+  │   ├── Parse: attributes.description?.standard  →  initials regex
+  │   └── SSE event: { type: "progress", stage: "tracks", current: N, total: 31 }
+  │
+  ├── db.batch([delete artistTags, sessionTracks, tracks, sessions])
+  ├── db.insert(sessions).values([...31])
+  ├── db.insert(contributors).values([...4]) onConflictDoNothing
+  ├── db.insert(tracks).values([...~496])
+  ├── db.insert(sessionTracks).values([...~496])
+  │
+  ├── Deduplicate artists (~50–150 unique)
+  └── For each unique artist:
+      ├── GET last.fm artist.gettoptags (4 req/sec, 250ms delay)
+      ├── db.insert(artistTags).values([top 5 tags])
+      └── SSE event: { type: "progress", stage: "enriching", current: N, total: M }
+  
+  SSE event: { type: "complete", sessions: 31, tracks: N }
+  Stream closes
+  ▼
+Browser: updates progress bar, status line, shows completion summary
 ```
 
-### Recommended Project Structure
+### Recommended Project Structure (Phase 2 additions)
 
 ```
 app/
 ├── api/
 │   ├── import/
-│   │   └── route.ts             # Replace stub — streaming POST
-│   ├── sessions/
-│   │   └── [id]/
-│   │       ├── date/
-│   │       │   └── route.ts     # PATCH — update session date
-│   │       └── attribution/
-│   │           └── route.ts     # PATCH — manual attribution override
-│   └── auth/                    # Phase 1 (unchanged)
+│   │   └── route.ts           # Replace Phase 1 stub — SSE streaming import handler
+│   ├── apple-token/
+│   │   └── route.ts           # GET — returns short-lived developer JWT (admin only)
+│   └── sessions/
+│       └── [id]/
+│           └── route.ts       # PATCH — save date for a session (inline date entry)
 ├── dashboard/
-│   └── page.tsx                 # Add session table + attribution card
-db/
-└── schema.ts                    # Add sessions, tracks, session_tracks, contributors, artist_tags
-lib/
-├── auth.ts                      # Add Spotify social provider
-├── spotify.ts                   # NEW: Spotify API client helpers (token fetch, playlist fetch, items fetch)
-├── lastfm.ts                    # NEW: Last.fm tag enrichment helper
-└── import-orchestrator.ts       # NEW: Full import pipeline (calls spotify.ts + lastfm.ts)
+│   └── page.tsx               # Extended: session date table + attribution error card
 components/
-├── ImportTriggerCard.tsx         # Replace with streaming-aware version
-├── SessionDateTable.tsx          # NEW: inline date entry table (Client Component)
-└── AttributionErrorCard.tsx      # NEW: manual attribution UI (Client Component)
+├── ImportTriggerCard.tsx       # Replace: add progress bar, SSE stream reader, status line
+├── AttributionErrorCard.tsx   # New: sessions with attributionParsed=false
+└── SessionDateTable.tsx       # New: 31-row table with inline date inputs
+db/
+└── schema.ts                  # Extend: sessions, tracks, session_tracks, contributors, artist_tags
+lib/
+└── apple-dev-token.ts         # New: jose ES256 token generation (server-only)
 ```
 
-### Pattern 1: Next.js 16 Streaming Route Handler (SSE)
+### Pattern 1: Developer Token Generation (server-side only)
 
-**What:** Return a `ReadableStream` with `Content-Type: text/event-stream` from the import Route Handler so the admin can watch progress without a separate polling endpoint.
-
-**When to use:** Long-running server operation (the import takes ~30–60s for 31 playlists + 496 tracks + ~80 unique artist tag lookups) where user feedback is required.
+**Source:** [panva/jose discussions #158](https://github.com/panva/jose/discussions/158) [VERIFIED: confirmed via WebFetch]
 
 ```typescript
-// Source: https://nextjs.org/docs/app/guides/streaming#streaming-in-route-handlers
+// lib/apple-dev-token.ts
+import { SignJWT } from "jose";
+import { createPrivateKey } from "crypto";
+
+export async function generateAppleDeveloperToken(): Promise<string> {
+  const rawKey = process.env.APPLE_PRIVATE_KEY;
+  if (!rawKey) throw new Error("APPLE_PRIVATE_KEY env var is not set");
+
+  // .replace(/\\n/g, "\n") is critical: env vars store \n as literal two chars
+  const privateKey = createPrivateKey(rawKey.replace(/\\n/g, "\n"));
+
+  return new SignJWT({})
+    .setProtectedHeader({ alg: "ES256", kid: process.env.APPLE_KEY_ID! })
+    .setIssuer(process.env.APPLE_TEAM_ID!)
+    .setIssuedAt()
+    .setExpirationTime("1h")
+    .sign(privateKey);
+}
+```
+
+### Pattern 2: Apple Music API Two-Header Fetch (server-side)
+
+**Source:** [Apple Developer Documentation — Apple Music API](https://developer.apple.com/documentation/applemusicapi/) [CITED: developer.apple.com/documentation/applemusicapi]
+
+```typescript
+const AM_BASE = "https://api.music.apple.com/v1";
+
+async function appleGet(path: string, devToken: string, userToken: string) {
+  const res = await fetch(`${AM_BASE}${path}`, {
+    headers: {
+      Authorization: `Bearer ${devToken}`,
+      "Music-User-Token": userToken,
+    },
+  });
+  if (!res.ok) throw new Error(`Apple Music API ${res.status} on ${path}`);
+  return res.json();
+}
+```
+
+### Pattern 3: Paginate All Library Playlists
+
+**Source:** [Apple Developer Forums thread/704994](https://developer.apple.com/forums/thread/704994) [CITED: developer.apple.com/forums]
+
+```typescript
+async function fetchAllLibraryPlaylists(devToken: string, userToken: string) {
+  const all: ApplePlaylist[] = [];
+  let offset = 0;
+  const limit = 100; // [ASSUMED] max per request per forum reports
+
+  while (true) {
+    const page = await appleGet(
+      `/me/library/playlists?limit=${limit}&offset=${offset}`,
+      devToken,
+      userToken
+    ) as { data: ApplePlaylist[]; next?: string };
+
+    all.push(...page.data.filter((p) => p.attributes?.name)); // filter phantom records
+    if (!page.next || page.data.length < limit) break;
+    offset += limit;
+  }
+
+  return all;
+}
+```
+
+### Pattern 4: Fetch Playlist Tracks with Catalog Relationship
+
+**Source:** [Apple Developer Forums thread/688774](https://developer.apple.com/forums/thread/688774) [CITED: developer.apple.com/forums] — catalog include for ISRC
+**Source:** [Apple Developer Forums thread/132606](https://developer.apple.com/forums/thread/132606) [CITED: developer.apple.com/forums] — ISRC not on library-songs directly
+
+```typescript
+async function fetchPlaylistTracks(
+  playlistId: string,
+  devToken: string,
+  userToken: string
+) {
+  const all: AppleLibrarySong[] = [];
+  let offset = 0;
+
+  while (true) {
+    const page = await appleGet(
+      `/me/library/playlists/${playlistId}/tracks?include=catalog&limit=100&offset=${offset}`,
+      devToken,
+      userToken
+    ) as { data: AppleLibrarySong[]; next?: string };
+
+    all.push(...page.data);
+    if (!page.next || page.data.length < 100) break;
+    offset += 100;
+  }
+
+  return all;
+}
+```
+
+**Key insight on `include=catalog`:**
+- `library-songs` do NOT have ISRC directly [VERIFIED: Apple Staff confirmed in forums thread/132606]
+- `include=catalog` returns the related catalog song nested in `relationships.catalog.data[0]`
+- Catalog song has `attributes.isrc`, `attributes.releaseDate`, `attributes.genreNames`
+- Library song has `attributes.name`, `attributes.artistName`, `attributes.albumName`, `attributes.trackNumber`, `attributes.durationInMillis`
+
+### Pattern 5: MusicKit JS v3 Browser Initialization
+
+**Source:** [gutta.medium.com](https://gutta.medium.com/using-musickitjs-to-integrate-your-web-application-with-apple-music-35740723221e) [CITED]; [CLAUDE.md CDN URL]; [nextjs.org/docs Script component](https://nextjs.org/docs/app/api-reference/components/script) [CITED]
+
+```typescript
+// Inside ImportTriggerCard ("use client")
+// Step 1: Fetch developer token from server (admin-only GET route)
+const { token: devToken } = await fetch("/api/apple-token").then((r) => r.json());
+
+// Step 2: Load MusicKit via next/script in JSX:
+// <Script
+//   src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"
+//   strategy="afterInteractive"
+//   onLoad={() => setMusicKitReady(true)}
+// />
+
+// Step 3: On button click (user gesture required for popup)
+async function handleConnectAppleMusic() {
+  await window.MusicKit.configure({
+    developerToken: devToken,
+    app: { name: "Warwick Massive Tunage", build: "1.0" },
+  });
+  const musicUserToken = await window.MusicKit.getInstance().authorize();
+  // Step 4: POST to /api/import with the user token
+  await startImport(musicUserToken);
+}
+```
+
+### Pattern 6: SSE Streaming Import Response
+
+**Source:** [nextjs.org/docs/app/guides/streaming](https://nextjs.org/docs/app/guides/streaming) [CITED]; [vercel.com/docs/functions/configuring-functions/duration](https://vercel.com/docs/functions/configuring-functions/duration) [VERIFIED: confirmed from 2026-05-14 Vercel docs]
+
+```typescript
 // app/api/import/route.ts
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export const maxDuration = 300; // Explicit — matches Vercel Hobby default
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  if (session.user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "admin") return Response.json({ error: "Forbidden" }, { status: 403 });
 
+  const { musicUserToken } = await request.json();
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
-      function send(event: string, data: string) {
-        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data}\n\n`));
-      }
+      const send = (data: object) =>
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
 
       try {
-        send('status', 'Fetching playlists…');
-        // ... import logic here, calling send() for progress ...
-        send('complete', JSON.stringify({ sessions: 31, tracks: 496 }));
+        // ... import logic calling send() for each progress event
+        send({ type: "complete", sessions: 31, tracks: 496 });
       } catch (err) {
-        send('error', String(err));
+        send({ type: "error", message: String(err) });
       } finally {
         controller.close();
       }
@@ -263,184 +375,129 @@ export async function POST(request: Request) {
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
     },
   });
 }
 ```
 
-**Client consumption (ImportTriggerCard.tsx):**
+**Client-side SSE reader pattern:**
 ```typescript
-// "use client"
-const response = await fetch('/api/import', { method: 'POST' });
-const reader = response.body!.getReader();
+const res = await fetch("/api/import", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ musicUserToken }),
+});
+const reader = res.body!.getReader();
 const decoder = new TextDecoder();
 
 while (true) {
   const { done, value } = await reader.read();
   if (done) break;
-  // Parse SSE lines and update progress state
-  const text = decoder.decode(value);
-  // Parse event: and data: lines to update UI
+  for (const line of decoder.decode(value).split("\n")) {
+    if (line.startsWith("data: ")) {
+      const event = JSON.parse(line.slice(6));
+      // Update React state: progress, status text, completion summary
+    }
+  }
 }
 ```
 
-### Pattern 2: Spotify User OAuth Token Recovery
+### Pattern 7: Drizzle Batch Replace-All
 
-**What:** Retrieve Mark's Spotify `access_token` from the Better Auth `account` table (stored when he logs in via the Spotify social provider) for use in the import API route.
-
-**When to use:** Any server-side operation that needs to act as the signed-in user against Spotify. Avoids re-prompting for OAuth at import time.
+**Source:** [orm.drizzle.team/docs/batch-api](https://orm.drizzle.team/docs/batch-api) [VERIFIED: confirmed via WebFetch]; [orm.drizzle.team/docs/delete](https://orm.drizzle.team/docs/delete) [VERIFIED]
 
 ```typescript
-// Source: Better Auth docs — account table stores oauth tokens
-// lib/spotify.ts
-import { db } from '@/lib/db';
-import { account } from '@/db/schema';
-import { and, eq } from 'drizzle-orm';
+// Delete in reverse FK dependency order (child rows first)
+await db.batch([
+  db.delete(schema.artistTags),
+  db.delete(schema.sessionTracks),
+  db.delete(schema.tracks),
+  db.delete(schema.sessions),
+  // contributors NOT deleted — seeded once, never re-deleted
+]);
 
-export async function getSpotifyAccessToken(userId: string): Promise<string | null> {
-  const row = await db
-    .select({ accessToken: account.accessToken, expiresAt: account.accessTokenExpiresAt })
-    .from(account)
-    .where(and(
-      eq(account.userId, userId),
-      eq(account.providerId, 'spotify'),
-    ))
-    .get();
-
-  if (!row?.accessToken) return null;
-  // Better Auth handles token refresh automatically; token in DB should be valid
-  return row.accessToken;
-}
+// Insert in FK dependency order; guard empty arrays
+if (sessions.length > 0) await db.insert(schema.sessions).values(sessions);
+await db.insert(schema.contributors).values(contributors).onConflictDoNothing();
+if (tracks.length > 0) await db.insert(schema.tracks).values(tracks);
+if (sessionTracks.length > 0) await db.insert(schema.sessionTracks).values(sessionTracks);
+if (artistTags.length > 0) await db.insert(schema.artistTags).values(artistTags);
 ```
 
-**Note on token freshness:** Better Auth refreshes Spotify tokens automatically when `useSession()` is active client-side. But the import Route Handler runs server-side after the user has navigated to the dashboard. The token in the `account` table may be up to 60 minutes old (Spotify tokens expire at 3600s). The import should check `accessTokenExpiresAt` and, if within 5 minutes of expiry, call Better Auth's refresh API or use `fetch` directly with the `refresh_token` from the `account` table.
+### Pattern 8: Last.fm Rate-Limited Enrichment
 
-### Pattern 3: Drizzle Replace-All Import Transaction
-
-**What:** Delete all existing import data and re-insert in a single Drizzle transaction to prevent partial states (D-04).
+**Source:** [lastfm-docs.github.io/api-docs/artist/getTopTags](https://lastfm-docs.github.io/api-docs/artist/getTopTags/) [CITED]
 
 ```typescript
-// Source: https://orm.drizzle.team/docs/transactions, https://orm.drizzle.team/docs/delete
-// lib/import-orchestrator.ts
-import { db } from '@/lib/db';
-import { sessions, tracks, sessionTracks, artistTags } from '@/db/schema';
+const LASTFM_BASE = "https://ws.audioscrobbler.com/2.0/";
+const RATE_DELAY_MS = 250; // 4 req/sec — safely under 5/sec ToS limit
 
-await db.transaction(async (tx) => {
-  // Delete in FK-safe order (child tables first)
-  await tx.delete(artistTags);
-  await tx.delete(sessionTracks);
-  await tx.delete(tracks);
-  await tx.delete(sessions);
-  // Note: contributors is seeded once and NOT cleared on re-import
-  // (contributor IDs are stable FKs; re-seeding would require cascade)
-
-  // Insert fresh data
-  for (const session of importedSessions) {
-    await tx.insert(sessions).values(session);
-  }
-  for (const track of importedTracks) {
-    await tx.insert(tracks).values(track);
-  }
-  // ... etc.
-});
-```
-
-**IMPORTANT:** The transaction runs inside the streaming Route Handler's `start()` callback. Progress events sent before the transaction commits are technically pre-commit. This is acceptable for an admin-only, single-user operation.
-
-### Pattern 4: Last.fm Rate-Limited Sequential Enrichment
-
-**What:** Fetch top tags for each unique artist, respecting Last.fm's confirmed 5 req/sec limit.
-
-```typescript
-// Source: https://www.last.fm/api/show/artist.getTopTags (official docs), API TOS
-// lib/lastfm.ts
-const LASTFM_BASE = 'https://ws.audioscrobbler.com/2.0/';
-const RATE_LIMIT_MS = 200; // 5 req/sec = 200ms between requests
-
-export async function getTopTagsForArtist(
-  artistName: string,
-  apiKey: string
-): Promise<string[]> {
+async function fetchArtistTags(artistName: string): Promise<string[]> {
   const url = new URL(LASTFM_BASE);
-  url.searchParams.set('method', 'artist.gettoptags');
-  url.searchParams.set('artist', artistName);
-  url.searchParams.set('api_key', apiKey);
-  url.searchParams.set('format', 'json');
-  url.searchParams.set('autocorrect', '1');
+  url.searchParams.set("method", "artist.gettoptags");
+  url.searchParams.set("artist", artistName);
+  url.searchParams.set("api_key", process.env.LASTFM_API_KEY!);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("autocorrect", "1");
 
   const res = await fetch(url.toString());
-  if (!res.ok) return [];
-
   const data = await res.json() as {
-    toptags?: { tag: Array<{ name: string; count: number; url: string }> };
+    toptags?: { tag: { name: string; count: number }[] };
     error?: number;
-    message?: string;
   };
 
-  if (data.error || !data.toptags?.tag) return [];
+  // Last.fm returns HTTP 200 even for errors — always check body
+  if (data.error || !data.toptags) return [];
   return data.toptags.tag.slice(0, 5).map((t) => t.name.toLowerCase());
 }
-
-// Caller: iterate unique artists with a delay
-for (const artist of uniqueArtists) {
-  const tags = await getTopTagsForArtist(artist, process.env.LASTFM_API_KEY!);
-  // insert into artist_tags
-  await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
-}
 ```
 
-### Pattern 5: Initials String Parsing
+### Pattern 9: Description Parsing (Zod + Regex)
 
-**What:** Parse contributor order from playlist description using regex.
-
-**Format in playlists:** e.g. `"Theme: Desert Island Discs | MW, JG, JS, IT"`
+**Source:** Description field path confirmed from Apple forums; Zod v4 [VERIFIED: npm registry]
 
 ```typescript
-// Claude's discretion — D-03
-// Regex: match 2 uppercase letters, comma-separated, in groups of 4
-const INITIALS_REGEX = /\b([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2})\b/;
+// Apple Music description lives at: attributes.description?.standard
+// Example: "Session 07 — Desert Island Discs — MW, JG, JS, IT"
+// The initials pattern matches: two uppercase letters × 4, comma-separated
 
-const VALID_INITIALS = new Set(['MW', 'JG', 'JS', 'IT']);
+const INITIALS_RE = /\b([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2})\b/;
+const SESSION_NUM_RE = /\b(\d+)\b/;
 
-function parseInitials(description: string): string[] | null {
-  const match = description.match(INITIALS_REGEX);
-  if (!match) return null;
-  const candidates = [match[1], match[2], match[3], match[4]];
-  // Validate all 4 are known contributors
-  if (!candidates.every((i) => VALID_INITIALS.has(i))) return null;
-  // Validate no duplicates
-  if (new Set(candidates).size !== 4) return null;
-  return candidates; // e.g. ['MW', 'JG', 'JS', 'IT']
-}
-```
+const KNOWN_CONTRIBUTORS: Record<string, string> = {
+  MW: "Mark Wright",
+  JG: "Jack Groves",
+  JS: "Jon Slade",
+  IT: "Iwan Thomas",
+};
 
-**Attribution from initials:** Tracks 1–4 → `initials[0]`, tracks 5–8 → `initials[1]`, etc.
+function parsePlaylistDescription(
+  name: string,
+  description: string | undefined
+): { sessionNumber: number; theme: string; initials: string[] | null } {
+  const numMatch = name.match(SESSION_NUM_RE);
+  const sessionNumber = numMatch ? parseInt(numMatch[1], 10) : 0;
+  const theme = name.replace(/session\s*\d+\s*[-—]?\s*/i, "").trim();
 
-### Pattern 6: Drizzle Insert Batch Optimisation
+  const initialsMatch = description?.match(INITIALS_RE);
+  const initials = initialsMatch
+    ? [initialsMatch[1], initialsMatch[2], initialsMatch[3], initialsMatch[4]]
+    : null; // null → attributionParsed = false (IMPORT-08)
 
-**What:** For ~496 tracks, insert in batches to avoid SQLite "too many bound parameters" errors (SQLite limit: 999 parameters).
-
-```typescript
-// Source: [ASSUMED] — SQLite SQLITE_MAX_VARIABLE_NUMBER limit
-// A track row has ~10 fields → max batch size ≈ 99 rows per insert
-const BATCH_SIZE = 50; // conservative; each track row has ~10 columns
-for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
-  await tx.insert(tracksTable).values(tracks.slice(i, i + BATCH_SIZE));
+  return { sessionNumber, theme, initials };
 }
 ```
 
 ### Anti-Patterns to Avoid
 
-- **Using `GET /users/{user_id}/playlists`:** REMOVED in Feb 2026 Dev Mode. Will 404. Use `GET /me/playlists` instead.
-- **Using `@spotify/web-api-ts-sdk` `getPlaylistItems()` directly:** SDK v1.2.0 still calls `/tracks` internally, not `/items`. Call `GET /playlists/{id}/items` directly via `fetch`.
-- **Calling Last.fm without rate limit:** Error code 29 (rate limit exceeded) blocks enrichment. Always maintain 200ms gaps.
-- **Using `middleware.ts`:** Deprecated in Next.js 16 in favour of `proxy.ts`. Already using `proxy.ts` from Phase 1 — do not add a `middleware.ts`.
-- **Writing to local SQLite on Vercel:** Phase 1 established Turso; do not fall back to file-system SQLite writes.
-- **Streaming from a POST route without `dynamic = 'force-dynamic'`:** Next.js may cache or buffer. Export `export const dynamic = 'force-dynamic'` and `export const runtime = 'nodejs'` on the import route.
-- **Clearing `contributors` table on re-import:** Contributors are stable seed data. Re-seeding would require cascading DELETE on `session_tracks.attributed_user_id` FK. Seed contributors once and skip them in the truncate pass.
+- **Calling Apple Music API from the browser**: MusicKit JS `authorize()` must run browser-side, but all subsequent API calls go through the Next.js server route — never expose the developer token to the client
+- **Using `middleware.ts`**: Deprecated in Next.js 16; use `proxy.ts` (established in Phase 1)
+- **Synchronous import response**: Fetching 31 playlists + 496 tracks + Last.fm enrichment in a non-streaming POST response blocks the UI and risks UX degradation; use SSE
+- **Re-using Music User Token across imports**: Call `authorize()` fresh each time; do not store the user token in the DB
+- **`db.insert().values([])`**: Drizzle may throw on empty arrays — always guard with `if (arr.length > 0)`
 
 ---
 
@@ -448,266 +505,159 @@ for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Spotify token exchange | Custom OAuth flow | Better Auth Spotify social provider | Already in the stack; stores refresh_token automatically |
-| Spotify API type safety | Custom fetch wrapper with manual types | `@spotify/web-api-ts-sdk` types (even if not using SDK methods) | SDK ships typed response shapes — import types for `PlaylistTrack`, `SimplifiedPlaylist`, etc. |
-| Progress feedback from long-running route | Polling endpoint | `ReadableStream` SSE | Native Web Streams API; confirmed in Next.js 16 official docs |
-| DB migrations | Manual SQL | `npm run db:push` (`drizzle-kit push`) | Established in Phase 1; schema changes go through this command |
-| Last.fm requests | Custom retry/rate-limit library | Simple `await sleep(200)` between calls | 31 playlists × ~16 unique artists/playlist ≈ 80–100 unique artists total; sequential with sleep is sufficient |
-| Attribution slot UI | Custom dropdown component | shadcn `Select` | Already in UI-SPEC; Radix UI handles accessibility |
+| JWT signing | Custom HMAC/ECDSA code | `jose` SignJWT (already installed) | ES256 key parsing, header encoding, and claim serialization have subtle correctness requirements |
+| Apple Music API HTTP client | Full SDK wrapper | Thin `appleGet()` function around `fetch` | At 31 playlists × 16 tracks, a simple fetch loop is sufficient; no retry library needed |
+| SSE client parsing | Custom EventSource | `ReadableStream.getReader()` | EventSource doesn't support POST requests; manual reader is the correct pattern for POST-triggered SSE |
+| Rate limiting | Token bucket / queue library | `await new Promise((r) => setTimeout(r, 250))` in loop | ~50–150 unique artists at 4 req/sec = under 40 seconds; setTimeout loop is correct at this scale |
+| API response validation | Manual `if` type-narrowing | Zod `z.object().safeParse()` (already installed) | Apple Music API has no TypeScript SDK; Zod gives type-safe partial parsing with graceful failures |
 
-**Key insight:** At 31 sessions and ~496 tracks, every "clever" solution (queues, background workers, retry libraries) is over-engineering. Sequential `await` loops with simple error handling are correct and easier to debug.
+**Key insight:** This is a one-time admin operation for ~500 tracks. Sophisticated infrastructure (job queues, retry libraries, SDK wrappers) is engineering overhead that adds no value at this scale.
 
 ---
 
 ## Common Pitfalls
 
-### Pitfall 1: `GET /users/{user_id}/playlists` — REMOVED in Dev Mode
+### Pitfall 1: Apple Private Key Newline Handling
 
-**What goes wrong:** The import fails with HTTP 404 immediately when trying to list playlists.
+**What goes wrong:** `createPrivateKey()` throws "PEM routines: bad end line" or "no start line".
+**Why it happens:** The `.p8` file has literal newlines. When stored in `.env.local`, they become escaped `\n` sequences. Node's `crypto.createPrivateKey()` requires actual newline characters.
+**How to avoid:** Call `.replace(/\\n/g, "\n")` on `process.env.APPLE_PRIVATE_KEY` before passing to `createPrivateKey()`.
+**Warning signs:** `error:0909006C:PEM routines:get_name:no start line`
 
-**Why it happens:** Spotify removed this endpoint in the February 2026 Dev Mode restrictions. Only `GET /me/playlists` is available now for playlist discovery.
+### Pitfall 2: MusicKit JS `window` Access During SSR
 
-**How to avoid:** Use `GET /me/playlists` with Mark's OAuth `access_token` from the `account` table, not Client Credentials with a user ID.
+**What goes wrong:** `ReferenceError: window is not defined` when Next.js server-renders the component.
+**Why it happens:** MusicKit JS v3 is browser-only; `window` doesn't exist in Node.js.
+**How to avoid:** (a) Mark the component `"use client"`, (b) guard `window.MusicKit` access inside `useEffect` or after `onLoad` fires, (c) use `next/script` with `strategy="afterInteractive"`.
+**Warning signs:** Server render error referencing `window` or `MusicKit`
 
-**Warning signs:** 404 on first API call; "endpoint not found" in Spotify error body.
+### Pitfall 3: No TypeScript Types for MusicKit JS v3
 
----
-
-### Pitfall 2: Spotify SDK `getPlaylistItems()` Calls Old `/tracks` Path
-
-**What goes wrong:** `sdk.playlists.getPlaylistItems(id)` returns 404 in Dev Mode because the SDK hardcodes the old `/playlists/{id}/tracks` path.
-
-**Why it happens:** SDK v1.2.0 was published January 2024 and has not been updated for the February 2026 endpoint rename.
-
-**How to avoid:** Call `GET /playlists/{id}/items` directly via `fetch`. Use the SDK's TypeScript types for type-safety without using its network methods:
-
+**What goes wrong:** TypeScript errors when calling `window.MusicKit.*`.
+**Why it happens:** There is no `@types/musickit-js` or official TypeScript package for MusicKit JS v3.
+**How to avoid:** Add a minimal declaration in a `.d.ts` file:
 ```typescript
-import type { Page, PlaylistedTrack, Track } from '@spotify/web-api-ts-sdk';
-
-const res = await fetch(
-  `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=50&offset=${offset}`,
-  { headers: { Authorization: `Bearer ${accessToken}` } }
-);
-const data: Page<PlaylistedTrack<Track>> = await res.json();
+// types/musickit.d.ts
+declare global {
+  interface Window {
+    MusicKit: {
+      configure(config: { developerToken: string; app: { name: string; build: string } }): void;
+      getInstance(): { authorize(): Promise<string>; isAuthorized: boolean };
+    };
+  }
+}
+export {};
 ```
+**Warning signs:** `Property 'MusicKit' does not exist on type 'Window & typeof globalThis'`
 
-**Warning signs:** 404 on `getPlaylistItems()` call; Spotify changelog references `/items` not `/tracks`.
+### Pitfall 4: ISRC Not on library-songs
 
----
+**What goes wrong:** Parsing Apple Music track responses and finding no ISRC field.
+**Why it happens:** Library song resources (`library-songs` type) do not include ISRC — confirmed by Apple Staff in forums. [VERIFIED: thread/132606]
+**How to avoid:** Always fetch tracks with `?include=catalog`. Access ISRC via `track.relationships?.catalog?.data?.[0]?.attributes?.isrc`.
+**Warning signs:** `attributes.isrc` is `undefined` on all tracks
 
-### Pitfall 3: Client Credentials Cannot Fetch Playlist Items Post-Feb 2026
+### Pitfall 5: Last.fm Returns HTTP 200 for All Responses
 
-**What goes wrong:** Client Credentials token returns metadata-only responses from `GET /playlists/{id}/items` (or the items array is empty/null).
+**What goes wrong:** An enrichment call returns 200 OK but tag data is missing.
+**Why it happens:** Last.fm uses HTTP 200 for all responses including errors; the error is signalled by an `error` field in the JSON body. [CITED: lastfm-docs.github.io]
+**How to avoid:** Always check `if (data.error)` before accessing `data.toptags`. If `error === 29` (rate limit), wait and retry.
+**Warning signs:** `data.toptags` is undefined despite successful HTTP status
 
-**Why it happens:** Post-Feb 2026, playlist items are only returned for playlists owned by the authenticated user. Client Credentials has no user context, so Spotify considers it as accessing "other" playlists — metadata only.
+### Pitfall 6: Drizzle Insert with Empty Array
 
-**How to avoid:** Use Mark's OAuth token (from Better Auth's `account` table) for all playlist item fetches.
+**What goes wrong:** `db.insert(table).values([])` throws a runtime error.
+**Why it happens:** Drizzle ORM does not accept an empty array for `.values()`.
+**How to avoid:** Guard every insert: `if (rows.length > 0) await db.insert(table).values(rows);`
+**Warning signs:** `TypeError: Cannot read properties of undefined` during import
 
-**Warning signs:** `items` field is `null` or empty in the API response despite the playlist being non-empty.
+### Pitfall 7: `authorize()` Must Be Triggered by User Gesture
 
----
+**What goes wrong:** Apple's authorization popup is silently blocked.
+**Why it happens:** Modern browsers block popups unless triggered by a direct user interaction (click event).
+**How to avoid:** Call `MusicKit.getInstance().authorize()` inside the `onClick` handler of the import button — never on mount or in `useEffect`.
+**Warning signs:** No popup appears; no error thrown
 
-### Pitfall 4: Spotify Access Token Expiry During Import
+### Pitfall 8: Phantom Playlists in Paginated Results
 
-**What goes wrong:** The import starts successfully but fails partway through with HTTP 401 from Spotify (token expired after 3600 seconds).
-
-**Why it happens:** Better Auth refreshes the token client-side, but the server reads a potentially-stale token from the `account` table. A 31-playlist import with Last.fm enrichment can take 60–90 seconds, which is well within the 3600s window — but only if the token was fresh when the import started.
-
-**How to avoid:** At import start, check `account.accessTokenExpiresAt`. If within 5 minutes of expiry, call Better Auth's `auth.api.getSession()` (which triggers refresh) or use the stored `refresh_token` directly. For a 31-session app, the risk is LOW — the token is refreshed each time Mark visits the dashboard.
-
-**Warning signs:** 401 error mid-import; "Token expired" in Spotify API error body.
-
----
-
-### Pitfall 5: SQLite "too many bound parameters" on Batch Insert
-
-**What goes wrong:** Drizzle throws "SQLITE_ERROR: too many SQL variables" when inserting all 496 tracks in one `.values([...])` call.
-
-**Why it happens:** SQLite has a `SQLITE_MAX_VARIABLE_NUMBER` limit of 999 (default). A track row with 10 columns × 100 rows = 1000 variables, which exceeds the limit.
-
-**How to avoid:** Insert in batches of ≤50 rows per call (10 columns × 50 = 500 variables, well below the limit).
-
-**Warning signs:** Error thrown on the tracks insert step; no issue on sessions insert (31 rows × ~8 columns = 248 variables).
-
----
-
-### Pitfall 6: Drizzle Transaction Locks with libSQL Over HTTP
-
-**What goes wrong:** `db.transaction()` hangs or throws a locking error in production (Turso).
-
-**Why it happens:** libSQL over HTTP uses HTTP/2 multiplexing; the transaction wraps all operations in a serialised batch. If the import takes >30s, the Turso connection may time out.
-
-**How to avoid:** The transaction only covers DB writes (not the Spotify API fetches). Fetch all data first, build the in-memory arrays, then open the transaction and insert everything as fast as possible. The DB write phase for 496 tracks should complete in <5 seconds.
-
-**Warning signs:** Works in local dev (file SQLite) but hangs in production (Turso over HTTP).
-
----
-
-### Pitfall 7: `drizzle-kit push` Blocking Step
-
-**What goes wrong:** Import fails with "no such table: sessions" because the schema was updated but `push` was not run.
-
-**Why it happens:** Adding tables to `db/schema.ts` does not automatically migrate the database. This is the same BLOCKING pattern from Phase 1.
-
-**How to avoid:** `drizzle-kit push` must run as an explicit task before any code that touches the new tables. In the task sequence: schema changes → `npm run db:push` → code using tables.
-
-**Warning signs:** "no such table" SQLite error on first import attempt.
+**What goes wrong:** Extra playlist entries with empty names appear in the paginated results.
+**Why it happens:** Apple Music API may return "phantom" records to maintain pagination offset stability when playlists are deleted between paginated requests. [CITED: developer.apple.com/forums/thread/704994]
+**How to avoid:** Filter out playlist records where `attributes?.name` is falsy before session number matching.
+**Warning signs:** More than 31 playlists matching the session pattern; some with null names
 
 ---
 
 ## Code Examples
 
-### Spotify Client Credentials Token (for initial test only — not for production import)
+### Full Developer Token + Drizzle Schema
 
 ```typescript
-// Source: https://developer.spotify.com/documentation/web-api/tutorials/client-credentials-flow
-// NOTE: Client Credentials cannot fetch playlist items post-Feb 2026.
-// This is only useful for testing — do not use for the import route.
-const credentials = Buffer.from(
-  `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
-).toString('base64');
+// db/schema.ts — append to existing Better Auth tables
+// Source: orm.drizzle.team/docs/column-types/sqlite [CITED]
 
-const res = await fetch('https://accounts.spotify.com/api/token', {
-  method: 'POST',
-  headers: {
-    Authorization: `Basic ${credentials}`,
-    'Content-Type': 'application/x-www-form-urlencoded',
-  },
-  body: 'grant_type=client_credentials',
-});
-
-const { access_token, expires_in } = await res.json();
-// expires_in: 3600 (seconds)
-```
-
-### GET /me/playlists — Paginate All Results
-
-```typescript
-// Source: https://developer.spotify.com/documentation/web-api/reference/get-a-list-of-current-users-playlists
-// Requires user OAuth token (from account table)
-async function getAllUserPlaylists(accessToken: string) {
-  const playlists = [];
-  let offset = 0;
-  const limit = 50;
-
-  while (true) {
-    const res = await fetch(
-      `https://api.spotify.com/v1/me/playlists?limit=${limit}&offset=${offset}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const page = await res.json();
-    playlists.push(...page.items);
-    if (!page.next) break;
-    offset += limit;
-  }
-
-  return playlists;
-}
-```
-
-### Filter Playlists by Session Name Convention
-
-```typescript
-// Claude's discretion — D-03
-// Playlist name format observed: "Session 01 — Theme Name" or "S01 Theme" etc.
-// Regex targets "Session" followed by 1–2 digits (case-insensitive)
-const SESSION_NAME_REGEX = /\bsession\s*(\d{1,2})\b/i;
-
-function filterSessionPlaylists(playlists: SimplifiedPlaylist[]) {
-  return playlists
-    .filter((p) => SESSION_NAME_REGEX.test(p.name))
-    .map((p) => ({
-      ...p,
-      sessionNumber: parseInt(p.name.match(SESSION_NAME_REGEX)![1], 10),
-    }))
-    .sort((a, b) => a.sessionNumber - b.sessionNumber);
-}
-```
-
-**NOTE:** The exact playlist name format is [ASSUMED] — this regex should be validated against actual playlist names before the import task is written. The `SPOTIFY_USER_ID` env var gives access to the playlists for inspection.
-
-### GET /playlists/{id}/items — Direct Fetch (Bypassing SDK)
-
-```typescript
-// Source: https://developer.spotify.com/documentation/web-api/references/changes/february-2026
-// SDK v1.2.0 uses old /tracks path — use direct fetch instead
-import type { Page, PlaylistedTrack, Track } from '@spotify/web-api-ts-sdk';
-
-async function getPlaylistItems(
-  playlistId: string,
-  accessToken: string
-): Promise<PlaylistedTrack<Track>[]> {
-  const items: PlaylistedTrack<Track>[] = [];
-  let offset = 0;
-
-  while (true) {
-    const res = await fetch(
-      `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=50&offset=${offset}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const page: Page<PlaylistedTrack<Track>> = await res.json();
-    items.push(...page.items);
-    if (!page.next) break;
-    offset += 50;
-  }
-
-  return items;
-}
-```
-
-### Drizzle Schema for New Tables
-
-```typescript
-// Source: https://orm.drizzle.team/docs/column-types/sqlite, established Phase 1 patterns
-// db/schema.ts additions
-
-export const contributors = sqliteTable('contributors', {
-  id: text('id').primaryKey(), // 'MW' | 'JG' | 'JS' | 'IT'
-  name: text('name').notNull(),  // 'Mark Wright', etc.
-  sortOrder: integer('sort_order').notNull(), // 1–4 for default alphabetical order
-});
-
-export const sessions = sqliteTable('sessions', {
-  id: text('id').primaryKey(), // Spotify playlist ID
-  sessionNumber: integer('session_number').notNull().unique(),
-  theme: text('theme').notNull(),
-  description: text('description'),
-  datePlayed: integer('date_played', { mode: 'timestamp_ms' }), // nullable — entered manually
-  spotifyPlaylistId: text('spotify_playlist_id').notNull().unique(),
-  attributionStatus: text('attribution_status', {
-    enum: ['parsed', 'error', 'manual'],
-  }).notNull().default('parsed'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' })
+export const sessions = sqliteTable("sessions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sessionNumber: integer("session_number").notNull().unique(),
+  theme: text("theme").notNull(),
+  date: integer("date", { mode: "timestamp_ms" }), // nullable — manual input
+  description: text("description"),
+  attributionParsed: integer("attribution_parsed", { mode: "boolean" })
     .notNull()
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`),
+    .default(true), // false → shown in Attribution Error Card
+  appleMusicPlaylistId: text("apple_music_playlist_id"),
 });
 
-export const tracks = sqliteTable('tracks', {
-  id: text('id').primaryKey(), // Spotify track ID
-  title: text('title').notNull(),
-  artist: text('artist').notNull(),    // primary artist name (for Last.fm lookup)
-  album: text('album'),
-  releaseYear: integer('release_year'),
-  spotifyUrl: text('spotify_url'),
-  durationMs: integer('duration_ms'),
+export const contributors = sqliteTable("contributors", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  initials: text("initials").notNull().unique(), // MW, JG, JS, IT
+  name: text("name").notNull(),
+  userId: text("user_id").references(() => user.id),
 });
 
-export const sessionTracks = sqliteTable('session_tracks', {
-  sessionId: text('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
-  trackId: text('track_id').notNull().references(() => tracks.id, { onDelete: 'cascade' }),
-  position: integer('position').notNull(), // 1–16
-  attributedUserId: text('attributed_user_id').references(() => contributors.id),
-}, (t) => [
-  primaryKey({ columns: [t.sessionId, t.trackId] }),
-]);
+export const tracks = sqliteTable("tracks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  appleId: text("apple_id"), // catalog song ID (from catalog relationship)
+  spotifyId: text("spotify_id"), // null until Phase 3
+  isrc: text("isrc"), // from catalog relationship; nullable
+  title: text("title").notNull(),
+  artistName: text("artist_name").notNull(),
+  albumName: text("album_name"),
+  releaseYear: integer("release_year"),
+  durationMs: integer("duration_ms"),
+});
 
-export const artistTags = sqliteTable('artist_tags', {
-  artistName: text('artist_name').notNull(),
-  tag: text('tag').notNull(),
-  rank: integer('rank').notNull(), // 1–5
-}, (t) => [
-  primaryKey({ columns: [t.artistName, t.rank] }),
-]);
+export const sessionTracks = sqliteTable("session_tracks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sessionId: integer("session_id")
+    .notNull()
+    .references(() => sessions.id, { onDelete: "cascade" }),
+  trackId: integer("track_id")
+    .notNull()
+    .references(() => tracks.id, { onDelete: "cascade" }),
+  position: integer("position").notNull(), // 1–16
+  attributedContributorId: integer("attributed_contributor_id")
+    .references(() => contributors.id),
+});
+
+export const artistTags = sqliteTable("artist_tags", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  artistName: text("artist_name").notNull(),
+  tag: text("tag").notNull(),
+  rank: integer("rank").notNull(), // 1 = top tag
+});
+```
+
+### env.local additions
+
+```bash
+# Apple Music Developer Token — from Apple Developer portal
+APPLE_TEAM_ID=YOUR_TEAM_ID           # 10-character string
+APPLE_KEY_ID=YOUR_KEY_ID             # Key identifier from MusicKit key
+APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIGH...\n-----END PRIVATE KEY-----"
+# Store the .p8 file content with \n in place of real newlines
+
+# Last.fm API
+LASTFM_API_KEY=your_lastfm_api_key
 ```
 
 ---
@@ -716,16 +666,15 @@ export const artistTags = sqliteTable('artist_tags', {
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| `GET /playlists/{id}/tracks` | `GET /playlists/{id}/items` | February 2026 | SDK v1.2.0 still uses old path — must call API directly |
-| `GET /users/{user_id}/playlists` | `GET /me/playlists` (user OAuth required) | February 2026 | Decision D-02 cannot be fulfilled with Client Credentials |
-| Auth.js v5 / NextAuth | Better Auth 1.x | September 2025 | Already using Better Auth; Spotify social provider available |
-| `middleware.ts` | `proxy.ts` | Next.js 16 | Already using `proxy.ts` from Phase 1 |
-| ESLint + Prettier | Biome 2.x | 2025–2026 | Already using Biome; lint scripts established |
+| Spotify as primary import source | Apple Music via MusicKit JS v3 | 2026-06-12 (phase pivot) | All import logic targets Apple Music; Spotify deferred to Phase 3 |
+| Vercel Hobby 10s timeout (older articles) | Vercel Hobby 300s default [VERIFIED: 2026-05-14 docs] | 2025 Vercel fluid compute update | Import can complete synchronously for 31 sessions; SSE is for UX not survival |
+| MusicKit JS v1/v2 `musickitloaded` event | v3 `next/script` `onLoad` callback | MusicKit v3 release | Cleaner integration with Next.js Script component |
+| `middleware.ts` | `proxy.ts` (Next.js 16) | Next.js 16 | Phase 1 already migrated |
 
 **Deprecated/outdated:**
-- `GET /users/{user_id}/playlists`: REMOVED in Dev Mode Feb 2026. Do not use.
-- `@spotify/web-api-ts-sdk` network methods for `/items`: SDK calls old `/tracks` path. Use direct `fetch` for items.
-- Spotify Implicit Grant Flow: Removed Nov 2025. Already avoided.
+
+- Spotify import via Client Credentials: No longer works post-Feb 2026 for playlist items in Dev Mode
+- `musicKit.api.library.playlists(null)` (v1/v2 API): v3 preferred pattern is passthrough `musicKit.api.music('/v1/me/library/playlists', { limit: 100 })` — both may work, passthrough is canonical for v3
 
 ---
 
@@ -733,55 +682,31 @@ export const artistTags = sqliteTable('artist_tags', {
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | Playlist names follow the pattern `"Session N — Theme"` (or similar) making a `/\bsession\s*(\d{1,2})\b/i` regex sufficient | Code Examples | Wrong regex means no playlists are matched; import fetches 0 sessions. Low risk — can be inspected from Spotify UI before coding. |
-| A2 | ~80–100 unique artists across 31 sessions × 16 tracks | Architecture + Last.fm pattern | If significantly more, Last.fm enrichment step takes longer; could approach Vercel timeout on Hobby plan |
-| A3 | Mark's Spotify account will have the Spotify social provider connected via Better Auth before running the import | Open Questions | Import fails at token retrieval step with "no Spotify account linked" |
-| A4 | Better Auth stores Spotify `access_token` in `account.access_token` column (not encrypted) and `refresh_token` in `account.refresh_token` | Pattern 2 | If Better Auth encrypts tokens at rest, direct DB read does not work — must go through Better Auth API |
-| A5 | 31-session import + 100 artist tag lookups completes within 60 seconds | Vercel timeout concern | On Vercel Hobby (10s timeout) the import would fail. On Pro (60s) it is borderline. Local dev and self-hosted are unaffected. |
-| A6 | `sdk.playlists.getUsersPlaylists()` from `@spotify/web-api-ts-sdk` calls `GET /me/playlists` correctly (the discovery endpoint, not the removed `/users/{id}/playlists`) | Pattern 2 | If the SDK also uses the removed endpoint, even more reason to use direct `fetch` throughout |
-
-**If this table is empty:** All claims in this research were verified or cited — no user confirmation needed.
+| A1 | Max limit per paginated request is 100 items for library playlists and tracks | Patterns 3, 4 | If actual limit is lower (e.g. 25), more requests needed; pagination loop still correct |
+| A2 | `musicKit.api.library.playlists({ limit: 100, offset: N })` or passthrough API method signature works in MusicKit JS v3 | Pattern 3 | If method signature differs, use raw `appleGet('/me/library/playlists?limit=100&offset=N', ...)` from the server — no client-side MusicKit call needed for the data fetch |
+| A3 | Last.fm returns empty tag array (not an error code) for completely unknown artists | Pattern 8 | If error code 6 is returned for unknown artists, add `data.error === 6` check and return empty array |
+| A4 | Description field is at `attributes.description?.standard` for library playlists | Pattern 9 | If structure differs (e.g. plain string), adjust the accessor; regex parse itself is robust |
+| A5 | `jose` `SignJWT` API is stable at v6.2.3 with `.setProtectedHeader / .setIssuer / .setIssuedAt / .setExpirationTime / .sign` chain | Pattern 1 | Already installed at ^6.2.3; jose v6 API is stable; no risk within the installed range |
+| A6 | Vercel Hobby plan default maxDuration is 300s (confirmed from 2026-05-14 Vercel docs) | Pattern 6 | If actual production limit is lower, SSE heartbeat keeps connection alive regardless |
 
 ---
 
 ## Open Questions
 
-### OQ-1: D-01/D-02 — Client Credentials Cannot Access Playlist Items Post-Feb 2026
+1. **Exact playlist naming convention used by Mark**
+   - What we know: Session number is in the playlist name; theme and initials are in description; regex is Claude's discretion (D-03)
+   - What's unclear: The exact format of Mark's playlist names (e.g. "Session 01 – Road Trip" vs "Warwick Massive #01")
+   - Recommendation: The import route should log all fetched playlist names on first run so the regex can be refined. Start permissive: `/\b(\d+)\b/` on name to extract session number.
 
-**What we know:**
-- `GET /users/{user_id}/playlists` — **REMOVED** in Dev Mode (Feb 2026) [VERIFIED: Spotify changelog]
-- `GET /playlists/{id}/items` — Returns metadata only (no items) for playlists accessed via Client Credentials [VERIFIED: Spotify Feb 2026 docs confirm "items only returned for user's own playlists"]
-- `GET /me/playlists` — Available, but requires user OAuth token (not Client Credentials) [VERIFIED: Spotify scopes docs]
+2. **Number of unique artists**
+   - What we know: ~496 tracks total; Last.fm enrichment at 4 req/sec
+   - What's unclear: Actual unique artist count (affects Last.fm enrichment duration)
+   - Recommendation: 50 artists = ~12s; 200 artists = ~50s; both well within 300s. No special handling needed.
 
-**What's unclear:** CONTEXT.md D-01 and D-02 assume Client Credentials is sufficient. This research shows it is not sufficient for item fetching or playlist discovery via user ID.
-
-**Two viable paths (planner should present to user):**
-
-**Option A — Better Auth Spotify Social Provider (recommended)**
-- Add Spotify as a social provider in `lib/auth.ts` with scopes `playlist-read-private playlist-read-collaborative`
-- When Mark signs in via Spotify OAuth, Better Auth stores his `access_token` + `refresh_token` in the `account` table
-- Import Route Handler reads the stored token and uses it for `GET /me/playlists` + `GET /playlists/{id}/items`
-- Pros: Clean, leverages existing Better Auth setup, supports future phases needing user data
-- Cons: Mark must re-authenticate via Spotify (one additional login step)
-- Net new env vars: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` (same vars as D-01, but used for OAuth not Client Credentials)
-
-**Option B — Hardcoded Playlist IDs**
-- Store the 31 Spotify playlist IDs in a `SPOTIFY_PLAYLIST_IDS` env var (comma-separated)
-- Use Client Credentials to get a token, but fetch items by calling `GET /playlists/{id}/items` with a user-context token... wait — this also requires user OAuth for items
-
-**Actually, Option B does NOT work either.** The Feb 2026 change means playlist items require user-owned context. Client Credentials cannot access track items from ANY playlist regardless of whether the ID is known. The only options are user OAuth (Option A) or the user being logged in and their token being used.
-
-**Recommendation:** Option A (Better Auth Spotify social provider). The planner should include this as the approach for D-01/D-02 and flag to the user before generating tasks.
-
----
-
-### OQ-2: Vercel Timeout Risk for Import on Hobby Plan
-
-**What we know:** Vercel Hobby plan has a 10-second function timeout. The import involves 31 playlist fetches + 496 item fetches + ~100 Last.fm calls. Estimated time: 45–90 seconds. [CITED: vercel docs via research]
-
-**What's unclear:** Current deployment target — Vercel Hobby vs Pro vs local dev only.
-
-**Recommendation:** If deploying to Vercel Hobby, the import WILL timeout. Options: (1) Vercel Pro (60s or 300s max), (2) Vercel Fluid Compute (up to 14 min on Pro), (3) Run import only from local dev. For a 4-person private app that imports once, option 3 (import from local dev) is pragmatic. The plan should note this and not block on it for Phase 2.
+3. **Apple Developer Program credentials**
+   - What we know: Apple Developer Program ($99/year) is required for a MusicKit identifier and `.p8` key
+   - What's unclear: Whether Mark has an active membership with a MusicKit key already created
+   - Recommendation: Wave 0 prerequisite task — verify `APPLE_TEAM_ID`, `APPLE_KEY_ID`, and `APPLE_PRIVATE_KEY` are set in `.env.local` and the developer token can be generated before any import code runs
 
 ---
 
@@ -789,79 +714,79 @@ export const artistTags = sqliteTable('artist_tags', {
 
 | Dependency | Required By | Available | Version | Fallback |
 |------------|------------|-----------|---------|----------|
-| Node.js 20.x | Next.js 16, import pipeline | ✓ | v20.20.1 | — |
-| npm | Package installs | ✓ | 10.8.2 | — |
-| local.db (SQLite) | Drizzle dev DB | ✓ | file exists (45KB) | Create fresh |
-| drizzle-kit | Schema push | ✓ | 0.31.10 | — |
-| `SPOTIFY_CLIENT_ID` env var | Better Auth Spotify provider | ✗ | — | Must set before testing |
-| `SPOTIFY_CLIENT_SECRET` env var | Better Auth Spotify provider | ✗ | — | Must set before testing |
-| `LASTFM_API_KEY` env var | Last.fm enrichment | ✗ | — | Enrichment step skipped (graceful degradation) |
-| Vercel (production) | Deployment | Unknown | — | Run import from local dev |
+| Node.js | All server-side code | ✓ | v20.20.1 | — |
+| `jose` npm package | Developer token generation | ✓ | ^6.2.3 (installed) | — |
+| `zod` npm package | Description parsing | ✓ | ^4.0.0 (installed) | — |
+| `drizzle-orm` | Database writes | ✓ | 0.45.2 (installed) | — |
+| `@libsql/client` | libSQL driver | ✓ | 0.17.3 (installed) | — |
+| Apple Developer account credentials | APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY | ? | — | None — blocking |
+| LASTFM_API_KEY | Last.fm enrichment | ? | — | Skip enrichment (graceful degrade — tracks stored without genre tags) |
+| MusicKit JS v3 CDN | Browser authorization | External CDN | v3 | None — required for IMPORT-01/07 |
 
 **Missing dependencies with no fallback:**
-- `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` — required to authenticate with Spotify. Register app at https://developer.spotify.com/dashboard and add to `.env.local`. **BLOCKING for import testing.**
+- Apple Developer Program credentials — Wave 0 must verify these exist in `.env.local` before any import code runs. Without them, the developer token cannot be generated and the Apple Music API is inaccessible.
 
 **Missing dependencies with fallback:**
-- `LASTFM_API_KEY` — enrichment can be skipped; `artist_tags` table stays empty; analytics in Phase 4 will need it but import itself succeeds.
+- `LASTFM_API_KEY` — if unset, log a warning and skip the enrichment step; `artistTags` table remains empty; Phase 4 analytics gracefully handles empty tag data
 
 ---
 
-## Security Domain
+## Project Constraints (from CLAUDE.md)
 
-### Applicable ASVS Categories
-
-| ASVS Category | Applies | Standard Control |
-|---------------|---------|-----------------|
-| V2 Authentication | yes — import requires admin role | Better Auth session check (established in Phase 1 `auth.api.getSession()`) |
-| V3 Session Management | no new concerns | Handled by Better Auth |
-| V4 Access Control | yes — import, date PATCH, attribution PATCH are admin-only | Existing pattern: session check → role !== 'admin' → 403 |
-| V5 Input Validation | yes — date input, attribution slot input | Zod for PATCH body validation; date validated as ISO string |
-| V6 Cryptography | no — no new secrets generated | Spotify secret is env var, not generated in code |
-
-### Known Threat Patterns for This Stack
-
-| Pattern | STRIDE | Standard Mitigation |
-|---------|--------|---------------------|
-| Import triggered by non-admin | Elevation of Privilege | Admin role check before import logic (established pattern) |
-| SSRF via Spotify/Last.fm URLs | Tampering | URLs are constructed from env vars + playlist IDs returned by Spotify API — no user-supplied URLs |
-| Token leakage via streaming response | Information Disclosure | SSE stream sends progress text only — never include raw `access_token` in event data |
-| SQLite injection via artist names | Tampering | Drizzle parameterises all values — no string interpolation into SQL |
-| Re-import deletes manually-entered dates | Data Loss | Warning copy in UI per UI-SPEC copywriting contract; admin-aware single-user operation |
+| Directive | Source | Impact on Phase 2 |
+|-----------|--------|-------------------|
+| Use `npm` (not `pnpm`) | Phase 1 decision | No new deps needed; `npm install` if any are added |
+| Use `proxy.ts` not `middleware.ts` | CLAUDE.md "What NOT to Use" | No new proxy changes needed; existing proxy covers `/dashboard` |
+| Never expose developer token client-side | CLAUDE.md Apple Music section | `lib/apple-dev-token.ts` is server-only; `/api/apple-token` route returns it only to authenticated admins |
+| MusicKit JS v3 CDN URL | CLAUDE.md §Apple Music Integration | Use `https://js-cdn.music.apple.com/musickit/v3/musickit.js` exactly |
+| `jose` for JWT signing, ES256 algorithm | CLAUDE.md §Supporting Libraries | Already installed; use `SignJWT` from `jose` |
+| Drizzle schema conventions: `sqliteTable`, `integer({ mode: "timestamp_ms" })` | Phase 1 PATTERNS.md | Phase 2 tables must follow the same column type patterns |
+| API route guard: session check → 401, role check → 403 | Phase 1 PATTERNS.md | Import route, apple-token route, and session PATCH route must all use this pattern |
+| Biome for lint/format | CLAUDE.md §Development Tools | Run `npm run lint` after each implementation task |
+| No inline audio playback | CLAUDE.md "Out of Scope" | Track data stored for linking only (Apple Music URL via `playParams`) |
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Spotify Feb 2026 Migration Guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide) — confirmed `GET /users/{id}/playlists` removal, items-only-for-owner restriction
-- [Spotify Feb 2026 Changelog](https://developer.spotify.com/documentation/web-api/references/changes/february-2026) — endpoint removals and renames confirmed
-- [Spotify Client Credentials Flow](https://developer.spotify.com/documentation/web-api/tutorials/client-credentials-flow) — token endpoint, request format, 3600s expiry
-- [Next.js 16 Streaming Guide](https://nextjs.org/docs/app/guides/streaming) — Route Handler `ReadableStream` SSE pattern, `export const dynamic = 'force-dynamic'`, Vercel streaming support confirmed
-- [Drizzle ORM Transactions](https://orm.drizzle.team/docs/transactions) — `db.transaction()` API, nested savepoints
-- [Drizzle ORM Delete](https://orm.drizzle.team/docs/delete) — `await db.delete(table)` without WHERE deletes all rows
-- [Drizzle SQLite Column Types](https://orm.drizzle.team/docs/column-types/sqlite) — `text({ enum })`, `integer({ mode: 'timestamp_ms' })`, composite primaryKey
-- [Last.fm artist.getTopTags](https://www.last.fm/api/show/artist.getTopTags) — endpoint URL, parameters, `autocorrect`, JSON format
+
+- [panva/jose discussions #158](https://github.com/panva/jose/discussions/158) — ES256 SignJWT pattern with `crypto.createPrivateKey()`, confirmed via WebFetch
+- [Apple Developer Forums thread/688774](https://developer.apple.com/forums/thread/688774) — `GET /v1/me/library/playlists/{id}/tracks` + `include=catalog`, confirmed via WebFetch
+- [Apple Developer Forums thread/132606](https://developer.apple.com/forums/thread/132606) — ISRC not on library-songs; Apple Staff confirmation, confirmed via WebFetch
+- [Apple Developer Forums thread/704994](https://developer.apple.com/forums/thread/704994) — pagination with limit/offset; phantom records behaviour, confirmed via WebFetch
+- [Vercel docs: Configuring Maximum Duration](https://vercel.com/docs/functions/configuring-functions/duration) — Hobby plan 300s default, updated 2026-05-14, confirmed via WebFetch
+- [Drizzle ORM docs: batch-api](https://orm.drizzle.team/docs/batch-api) — `db.batch()` implicit transaction, confirmed via WebFetch
+- [Drizzle ORM docs: delete](https://orm.drizzle.team/docs/delete) — `await db.delete(table)` syntax, confirmed via WebFetch
+- [Last.fm unofficial API docs: artist.getTopTags](https://lastfm-docs.github.io/api-docs/artist/getTopTags/) — response structure and parameters, confirmed via WebFetch
+- [Next.js docs: Script component](https://nextjs.org/docs/app/api-reference/components/script) — `strategy="afterInteractive"` + `onLoad`
+- [npm: jose v6.2.3](https://www.npmjs.com/package/jose) — [VERIFIED: npm registry] [OK] slopcheck
 
 ### Secondary (MEDIUM confidence)
-- [Last.fm API TOS](https://www.last.fm/api/tos) — 5 req/sec rate limit confirmed (via web search cross-reference with community)
-- [Spotify Web API TypeScript SDK README](https://github.com/spotify/spotify-web-api-ts-sdk/blob/main/README.md) — `SpotifyApi.withClientCredentials()` signature, Node.js-only requirement
-- [Spotify SDK PlaylistsEndpoints.ts](https://raw.githubusercontent.com/spotify/spotify-web-api-ts-sdk/main/src/endpoints/PlaylistsEndpoints.ts) — `getUsersPlaylists(user_id)` and `getPlaylistItems()` method signatures
-- [Spotify GET /me/playlists](https://developer.spotify.com/documentation/web-api/reference/get-a-list-of-current-users-playlists) — requires `playlist-read-private` scope, paginated response shape
 
-### Tertiary (LOW confidence — flagged)
-- Community reports that `@spotify/web-api-ts-sdk` v1.2.0 uses old `/tracks` path (GitHub issue #159 thread) — not independently verified from source code; treat as HIGH risk assumption
-- Estimated 45–90 second import time — [ASSUMED] based on 31 playlists × ~1s API call + 100 Last.fm calls × 0.2s = ~51 seconds minimum
+- [gutta.medium.com: Using MusicKit JS](https://gutta.medium.com/using-musickitjs-to-integrate-your-web-application-with-apple-music-35740723221e) — `authorize()` flow, Music User Token handling
+- [areknawo.com: Apple Music JavaScript integration guide](https://areknawo.com/apple-music-javascript-integration-guide/) — `musickitloaded` event, `MusicKit.configure()` pattern
+- [w3tutorials.net: Apple Music API with Node.js](https://www.w3tutorials.net/blog/apple-music-api-nodejs/) — two-header auth pattern
+- Description field structure (`attributes.description.standard`) — confirmed from Apple forums response examples and community sources
+
+### Tertiary (LOW confidence — marked [ASSUMED])
+
+- Max 100 items per paginated request [ASSUMED] — from developer forums discussion, not official Apple docs
+- `musicKit.api.library.playlists()` method signature in MusicKit JS v3 [ASSUMED] — consistent across multiple community sources; official MusicKit v3 docs inaccessible (Webpack SPA, not crawlable)
 
 ---
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH — all packages verified via `npm view`; established Phase 1 patterns apply
-- Spotify API constraints: HIGH — confirmed from official Feb 2026 docs; critical finding about D-01/D-02
-- Architecture: MEDIUM — streaming pattern confirmed; OAuth token recovery from Better Auth is [ASSUMED] not to be encrypted
-- Pitfalls: HIGH for SDK/endpoint issues; MEDIUM for timeout/batch limits
-- Last.fm integration: HIGH — simple unauthenticated GET; rate limit confirmed from official TOS
+- Developer token (jose ES256): HIGH — confirmed via GitHub discussions + npm registry
+- Two-header Apple Music API auth: HIGH — confirmed via Apple Developer Forums + multiple community sources
+- ISRC via catalog relationship: HIGH — Apple Staff confirmed in forums
+- Library playlists pagination: MEDIUM — forums-confirmed; official docs inaccessible
+- SSE streaming: HIGH — confirmed via official Next.js + Vercel docs
+- Drizzle batch delete + insert: HIGH — confirmed via official Drizzle docs
+- Last.fm integration: HIGH — confirmed via unofficial but community-maintained API docs
+- MusicKit JS v3 browser pattern: MEDIUM — multiple consistent community sources; official docs not crawlable
 
 **Research date:** 2026-06-12
-**Valid until:** 2026-07-12 (30 days — Spotify API is currently stable; Last.fm API is stable)
+**Valid until:** 2026-07-12 (30 days — MusicKit JS v3 is stable; Vercel limits confirmed from 2026-05-14 docs)
