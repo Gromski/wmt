@@ -7,15 +7,15 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
+// CR-04: App hard-codes dark mode via className="dark" on <html>; no ThemeProvider
+// is mounted. Passing theme="dark" directly ensures Sonner always renders in dark
+// mode rather than falling back to "system" (which could contradict the forced-dark class).
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="dark"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
