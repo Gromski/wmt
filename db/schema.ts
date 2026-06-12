@@ -75,10 +75,11 @@ export const verification = sqliteTable("verification", {
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
-    sql`(cast(unixepoch('subsecond') * 1000 as integer))`,
-  ),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(), // IN-02: match notNull convention used in user/session/account tables
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .$onUpdate(() => new Date()),
+    .$onUpdate(() => new Date())
+    .notNull(), // IN-02: match notNull convention used in user/session/account tables
 });
