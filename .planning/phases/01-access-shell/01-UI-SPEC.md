@@ -42,7 +42,7 @@ Declared values (must be multiples of 4):
 | 2xl | 48px | Hero/header vertical padding |
 | 3xl | 64px | Page-level top/bottom padding |
 
-Exceptions: Touch targets for the "Sign in with Spotify" button must be minimum 44px tall (mobile accessibility)
+Exceptions: Touch targets for the "Sign in" button must be minimum 44px tall (mobile accessibility)
 
 ---
 
@@ -69,13 +69,13 @@ shadcn zinc base with dark mode. The design operates in dark mode by default. Al
 |------|-------------|-----------------|-------|
 | Dominant (60%) | `background` | zinc-950 (#09090b) | Page background, root surface |
 | Secondary (30%) | `card` | zinc-900 (#18181b) | Dashboard card, nav bar background, content containers |
-| Accent (10%) | `primary` → violet | violet-600 (#7c3aed) | Sign in with Spotify button, active nav indicator, focus rings |
+| Accent (10%) | `primary` → violet | violet-600 (#7c3aed) | Sign in button, active nav indicator, focus rings |
 | Destructive | `destructive` | red-600 (#dc2626) | Sign-out confirmation (if any) |
 | Border | `border` | zinc-800 (#27272a) | Card borders, dividers, input outlines |
 | Muted text | `muted-foreground` | zinc-400 (#a1a1aa) | Helper text, empty state body, metadata |
 
 Accent reserved for:
-1. "Sign in with Spotify" button background
+1. "Sign in" button background
 2. Active/current nav indicator (underline or left border)
 3. Keyboard focus rings on all interactive elements
 4. The import trigger button (admin-only) when in its default state
@@ -92,12 +92,12 @@ Components required in this phase. All from shadcn official registry.
 
 | Component | shadcn command | Usage |
 |-----------|---------------|-------|
-| Button | `shadcn add button` | Sign in with Spotify (variant: default), sign-out (variant: ghost), import trigger (variant: default, admin-only) |
+| Button | `shadcn add button` | Sign in (variant: default), sign-out (variant: ghost), import trigger (variant: default, admin-only) |
 | Avatar | `shadcn add avatar` | Signed-in user display in header |
 | Badge | `shadcn add badge` | Admin role indicator on dashboard |
 | Separator | `shadcn add separator` | Divider between dashboard sections |
 | Card | `shadcn add card` | Dashboard content wrapper |
-| Toaster / Sonner | `shadcn add sonner` | OAuth error toast notification |
+| Toaster / Sonner | `shadcn add sonner` | Sign-in error toast notification |
 
 No third-party blocks required for Phase 1.
 
@@ -108,7 +108,7 @@ No third-party blocks required for Phase 1.
 ### Global Header (all routes)
 - Full-width, sticky at top, `card` background, 1px bottom border in `border` token colour
 - Left: app name "Warwick Massive Tunage" in heading weight (20px, semibold)
-- Right: Sign in with Spotify button (unauthenticated) OR avatar + name + sign-out link (authenticated)
+- Right: Sign in button (unauthenticated) OR avatar + name + sign-out link (authenticated)
 - Header height: 56px (14px padding top/bottom, 28px line for content — aligns to 8-point grid)
 
 ### Public Archive `/` (empty state, Phase 1)
@@ -131,17 +131,17 @@ No third-party blocks required for Phase 1.
 
 | Element | Copy |
 |---------|------|
-| Primary CTA (unauthenticated header) | "Sign in with Spotify" |
+| Primary CTA (unauthenticated header) | "Sign in" |
 | Dashboard greeting | "Signed in as [display name]" |
 | Admin badge label | "Admin" |
-| Import trigger heading | "Sync from Spotify" |
-| Import trigger description | "Fetch all sessions and tracks from your connected Spotify account." |
+| Import trigger heading | "Sync sessions" |
+| Import trigger description | "Fetch all sessions and tracks from the streaming platforms." |
 | Import trigger button | "Start import" |
 | Import trigger (already running) | "Importing…" (button disabled) |
 | Sign-out action | "Sign out" |
 | Empty state heading (public `/`) | "No sessions yet" |
 | Empty state body (public `/`) | "Sessions will appear here once the archive has been imported. Check back soon." |
-| OAuth error toast | "Sign-in failed. Check your Spotify account is active and try again." |
+| Sign-in error toast | "Sign-in failed. Check your email and password and try again." |
 | Destructive: sign-out | No confirmation dialog — sign-out is recoverable, user can re-authenticate immediately |
 
 Source: error copy from user decision (prompt `<design_decisions>`); all other copy from CONTEXT.md decisions D-02, D-03, D-10 and standard UX defaults.
@@ -152,13 +152,13 @@ Destructive actions in Phase 1: none that require a confirmation dialog. Sign-ou
 
 ## Interaction States
 
-### "Sign in with Spotify" Button
+### "Sign in" Button (email/password submit)
 | State | Appearance |
 |-------|-----------|
 | Default | Violet background, white label, Lucide `LogIn` icon left of label |
 | Hover | Violet-700 background (one step darker) |
 | Focus | 2px violet focus ring, 2px offset |
-| Loading (OAuth redirect in progress) | Button disabled, label "Connecting…", spinner icon replaces LogIn icon |
+| Loading (form submitting) | Button disabled, label "Signing in…", spinner icon replaces LogIn icon |
 | Error | Button re-enabled after toast fires; toast auto-dismisses after 5s |
 
 ### "Start import" Button (admin only)
