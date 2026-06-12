@@ -28,28 +28,28 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Requirements**: ACCESS-01, ACCESS-02, ACCESS-03, ACCESS-04
 **Success Criteria** (what must be TRUE):
 
-  1. MW, JG, JS, and IT can each log in via Spotify OAuth and reach the private dashboard
+  1. MW, JG, JS, and IT can each register and log in via email + password (per CONTEXT.md D-AUTH — Spotify OAuth replaced because the app owner does not have Spotify Premium) and reach the private dashboard
   2. Unauthenticated visitors can open a public URL and see the archive without logging in
-  3. Import trigger, date editing, and write operations are hidden from unauthenticated users
+  3. Import trigger, date editing, and write operations are hidden from unauthenticated users (and from non-admin authenticated users for the import trigger)
   4. Admin can trigger a re-import or sync from within the authenticated dashboard
 
 **Plans:** 4 plans
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Walking Skeleton scaffold: human prereqs (Spotify Developer app, npm legitimacy), scaffold Next.js 16 + Tailwind v4 + Biome, install verified deps, install shadcn/ui with new-york/zinc/dark preset
+- [ ] 01-01-PLAN.md — Walking Skeleton scaffold: human prereq (install pnpm globally), scaffold Next.js 16 + Tailwind v4 + Biome, install verified deps at locked versions, install shadcn/ui with new-york/zinc/dark preset + Inter font + violet accent
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-01b-PLAN.md — Walking Skeleton wiring: Drizzle schema with role column, Better Auth config (Spotify provider + first-user-admin hook), proxy.ts route gate, root layout + public empty-state page, BLOCKING schema push, dev-server boot verify
+- [ ] 01-01b-PLAN.md — Walking Skeleton wiring: Drizzle schema with role column, Better Auth config (emailAndPassword plugin + first-user-admin `before` hook), `/api/auth/[...all]` catch-all route, proxy.ts route gate (excludes public routes per D-04), public archive empty-state page, BLOCKING schema push, dev-server boot verify
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-02-PLAN.md — Authenticated vertical slice: global header with sign-in/sign-out, dashboard Server Component with signed-in confirmation; proves OAuth round trip end-to-end (exercises proxy.ts from 01-01b for the first time)
+- [ ] 01-02-PLAN.md — Authenticated vertical slice: GlobalHeader with conditional Sign in / Avatar+Sign out, `/sign-in` page with combined sign-in + sign-up form (Zod-validated email+password) calling `authClient.signIn.email`/`authClient.signUp.email`, dashboard Server Component with signed-in confirmation + Admin badge; proves email/password round trip end-to-end (exercises proxy.ts from 01-01b for the first time)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-03-PLAN.md — Admin import-trigger slice: POST /api/import with 401/403/202 gates, admin-only Card on dashboard; end-to-end verification of ACCESS-01..04
+- [ ] 01-03-PLAN.md — Admin import-trigger slice: POST /api/import with 401/403/202 gates, admin-only "Sync sessions" Card on dashboard with running-state button; end-to-end verification of ACCESS-01..04
 
 ### Phase 2: Import Pipeline
 

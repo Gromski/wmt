@@ -577,7 +577,7 @@ export async function POST() {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `disableSignUp: true` be set after all 4 users are registered?**
    - What we know: Better Auth supports `emailAndPassword.disableSignUp: true` at any time
