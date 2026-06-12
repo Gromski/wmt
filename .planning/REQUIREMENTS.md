@@ -32,7 +32,7 @@
 
 - [x] **ACCESS-01**: The four friends (MW, JG, JS, IT) can log in via Spotify OAuth to access the private dashboard
 - [x] **ACCESS-02**: The private dashboard gates import trigger, date editing, and any write operations behind authentication
-- [ ] **ACCESS-03**: Admin user can trigger a re-import or sync from Spotify (and Apple Music if connected) from within the dashboard
+- [x] **ACCESS-03**: Admin user can trigger a re-import or sync from Spotify (and Apple Music if connected) from within the dashboard
 - [x] **ACCESS-04**: A public read-only URL exposes the session archive and analytics to anyone without login
 
 ---
@@ -64,7 +64,7 @@
 |--------|-------|--------|
 | ACCESS-01 | Phase 1 — Access & Shell | Complete |
 | ACCESS-02 | Phase 1 — Access & Shell | Complete |
-| ACCESS-03 | Phase 1 — Access & Shell | Pending |
+| ACCESS-03 | Phase 1 — Access & Shell | Complete |
 | ACCESS-04 | Phase 1 — Access & Shell | Complete |
 | IMPORT-01 | Phase 2 — Import Pipeline | Pending |
 | IMPORT-02 | Phase 2 — Import Pipeline | Pending |
