@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // Better Auth managed table — shape matches betterauth/cli generate output
 // Extended with `role` column per D-05 (additionalFields config in lib/auth.ts)
@@ -20,7 +20,9 @@ export const user = sqliteTable("user", {
     .notNull(),
   // D-05: role column — additionalFields extension matching auth.ts config
   // NOT the Better Auth admin plugin (would conflict — RESEARCH.md Pitfall 2)
-  role: text("role", { enum: ["admin", "member"] }).notNull().default("member"),
+  role: text("role", { enum: ["admin", "member"] })
+    .notNull()
+    .default("member"),
 });
 
 export const session = sqliteTable("session", {
@@ -73,8 +75,9 @@ export const verification = sqliteTable("verification", {
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
+    sql`(cast(unixepoch('subsecond') * 1000 as integer))`,
+  ),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .$onUpdate(() => new Date()),

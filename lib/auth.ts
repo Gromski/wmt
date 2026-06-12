@@ -1,8 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { sql } from "drizzle-orm";
-import { db } from "@/lib/db";
 import * as schema from "@/db/schema";
+import { db } from "@/lib/db";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -30,11 +30,10 @@ export const auth = betterAuth({
         before: async (user) => {
           // First-user-is-admin rule (D-06).
           // Count existing users to detect first registration.
-          const result =
-            (await db
-              .select({ count: sql<number>`count(*)` })
-              .from(schema.user)
-              .get()) ?? { count: 0 };
+          const result = (await db
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.user)
+            .get()) ?? { count: 0 };
           if (Number(result.count) === 0) {
             return { data: { ...user, role: "admin" } };
           }
