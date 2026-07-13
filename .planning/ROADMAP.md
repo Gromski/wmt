@@ -65,11 +65,11 @@ Plans:
   4. Genre and artist tags are fetched from Last.fm and stored locally for each track's primary artist
   5. Sessions with missing or unparseable initials strings are flagged for manual review rather than silently failing
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Foundation: extend Drizzle schema with sessions/contributors/tracks/session_tracks/artist_tags + BLOCKING `npm run db:push`; build `lib/apple-dev-token.ts` (ES256 JWT) and `GET /api/apple-token` admin-only token vendor; declare `types/musickit.d.ts` global; install Table/Alert/Select/Progress/Tooltip shadcn primitives
+- [x] 02-01-PLAN.md — Foundation: extend Drizzle schema with sessions/contributors/tracks/session_tracks/artist_tags + BLOCKING `npm run db:push`; build `lib/apple-dev-token.ts` (ES256 JWT) and `GET /api/apple-token` admin-only token vendor; declare `types/musickit.d.ts` global; install Table/Alert/Select/Progress/Tooltip shadcn primitives
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -122,6 +122,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
-| 2. Import Pipeline | 0/3 | Not started | - |
+| 2. Import Pipeline | 1/3 | In Progress|  |
 | 3. Archive Browsing | 0/TBD | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |
