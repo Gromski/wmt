@@ -14,7 +14,7 @@ Four phases take the project from a standing start to a fully-interrogable archi
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Access & Shell** - Authenticated private dashboard and public read-only URL
-- [ ] **Phase 2: Import Pipeline** - Spotify/Apple Music import, attribution parsing, enrichment, date entry
+- [x] **Phase 2: Import Pipeline** - Spotify/Apple Music import, attribution parsing, enrichment, date entry (completed 2026-07-14)
 - [ ] **Phase 3: Archive Browsing** - Session list, track detail, timeline, search and filter
 - [ ] **Phase 4: Analytics** - Taste profiles, group overlap, wildcard detection, Wrapped cards
 
@@ -65,7 +65,7 @@ Plans:
   4. Genre and artist tags are fetched from Last.fm and stored locally for each track's primary artist
   5. Sessions with missing or unparseable initials strings are flagged for manual review rather than silently failing
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 **Wave 1**
 
@@ -77,7 +77,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-03-PLAN.md — Admin editor slice + end-to-end human verify: `PATCH /api/sessions/[id]` for date entry and `PATCH /api/sessions/[id]/attribution` for manual contributor assignment; SessionDateTable (inline 31-row date inputs, blur-to-save) and AttributionErrorCard (4-slot Select dropdowns per errored session); dashboard wiring; closes IMPORT-05 + IMPORT-08 UI; blocking human-verify of full Phase 2 happy path
+- [x] 02-03-PLAN.md — Admin editor slice + end-to-end human verify: `PATCH /api/sessions/[id]` for date entry and `PATCH /api/sessions/[id]/attribution` for manual contributor assignment; SessionDateTable (inline 31-row date inputs, blur-to-save) and AttributionErrorCard (4-slot Select dropdowns per errored session); dashboard wiring; closes IMPORT-05 + IMPORT-08 UI; blocking human-verify of full Phase 2 happy path
 
 **UI hint**: yes
 
@@ -122,6 +122,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
-| 2. Import Pipeline | 2/3 | In Progress|  |
+| 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
 | 3. Archive Browsing | 0/TBD | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |
