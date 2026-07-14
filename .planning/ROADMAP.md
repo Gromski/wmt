@@ -65,7 +65,7 @@ Plans:
   4. Genre and artist tags are fetched from Last.fm and stored locally for each track's primary artist
   5. Sessions with missing or unparseable initials strings are flagged for manual review rather than silently failing
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 **Wave 1**
 
@@ -73,7 +73,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — Apple Music import vertical slice: replace `/api/import` stub with SSE streaming handler (paginate library playlists → fetch tracks with `?include=catalog` → parse initials → batch replace-all → Last.fm enrichment); replace ImportTriggerCard with MusicKit JS v3 browser flow + Progress bar + status line; closes IMPORT-01..04, IMPORT-06..08 data-level
+- [x] 02-02-PLAN.md — Apple Music import vertical slice: replace `/api/import` stub with SSE streaming handler (paginate library playlists → fetch tracks with `?include=catalog` → parse initials → batch replace-all → Last.fm enrichment); replace ImportTriggerCard with MusicKit JS v3 browser flow + Progress bar + status line; closes IMPORT-01..04, IMPORT-06..08 data-level
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -122,6 +122,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
-| 2. Import Pipeline | 1/3 | In Progress|  |
+| 2. Import Pipeline | 2/3 | In Progress|  |
 | 3. Archive Browsing | 0/TBD | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |
