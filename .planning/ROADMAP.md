@@ -83,7 +83,7 @@ Plans:
 
 ### Phase 3: Archive Browsing
 
-**Goal**: Any user (public or authenticated) can browse the full session archive, open individual sessions, and jump directly to tracks on Spotify or Apple Music
+**Goal**: Any user (public or authenticated) can browse the full session archive, open individual sessions, and jump directly to tracks on Apple Music (or YouTube for fallback tracks — Spotify links deferred per CONTEXT.md D-10a, no Spotify data imported)
 **Mode:** mvp
 **Depends on**: Phase 2
 **Requirements**: BROWSE-01, BROWSE-02, BROWSE-03, BROWSE-04, BROWSE-05
@@ -91,11 +91,24 @@ Plans:
 
   1. User can see a list of all 31 sessions showing session number, theme, date, and the four contributors
   2. User can open any session and see all 16 tracks grouped under the person who chose them in play order
-  3. Each track has a working link that opens it in Spotify (or Apple Music if connected)
+  3. Each track has a working link that opens it in Apple Music (or YouTube for fallback tracks) — Spotify deferred per D-10a
   4. User can view a chronological timeline of all sessions
   5. User can search or filter sessions by theme keyword, person name, or artist name
 
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — Data layer (Findings 1 & 2): add nullable `youtube_url` to `tracks`, extend `lib/parse-playlist.ts` to extract YouTube URLs, thread youtubeUrl through `app/api/import/route.ts`; BLOCKING `npm run db:push`; human re-import checkpoint (corrects round-robin attribution + populates youtubeUrl) — BROWSE-03 data
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — Browse vertical slice: `/` → `/sessions` redirect, contributor colour map + ContributorChip, SessionCard, archive `/sessions` RSC (card grid via ArchiveClient), session detail `/sessions/[sessionNumber]` RSC with Apple Music + YouTube new-tab links — BROWSE-01, BROWSE-02, BROWSE-03
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-03-PLAN.md — Interactive slice: extend ArchiveClient with grid/table/timeline view toggle (URL `?view=` persistence) and client-side search across theme/person/artist; SessionTimeline component — BROWSE-04, BROWSE-05
+
 **UI hint**: yes
 
 ### Phase 4: Analytics
@@ -123,5 +136,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
-| 3. Archive Browsing | 0/TBD | Not started | - |
+| 3. Archive Browsing | 0/3 | Not started | - |
 | 4. Analytics | 0/TBD | Not started | - |
