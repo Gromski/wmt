@@ -1,10 +1,11 @@
 ---
 phase: 3
 slug: archive-browsing
-status: draft
+status: approved
 shadcn_initialized: true
 preset: "style=radix-nova baseColor=zinc darkMode=true"
 created: 2026-07-15
+reviewed_at: 2026-07-15
 ---
 
 # Phase 3 — UI Design Contract
@@ -148,6 +149,7 @@ Unchanged from Phase 1. The app-name link in the header points to `/sessions`. N
 ### Archive page `/sessions`
 - Single centered column, max-width 1120px, horizontal padding 16px (mobile) / 24px (desktop).
 - Top padding 48px (2xl); page title "Sessions" (Heading, 20/600) at top-left.
+- **Primary visual anchor:** the session card grid. The eye lands first on the top-left card (Session 31, newest-first) via position and its theme text at Heading (20/600) scale — the dominant element on the page. Title, controls bar, and grid read top-to-bottom; the grid is the focal region, the controls bar is secondary.
 - **Controls bar** below the title (32px / xl gap from results): left = search box (grows to fill), right = view-mode toggle (3 segments). On mobile these stack vertically with 16px (md) gap; search on top.
   - **Search box**: full-width on mobile, min-width 280px on desktop; `Search` icon left-inset; `card` surface, `border` outline; violet focus ring. Placeholder copy per Copywriting Contract. Filters instantly on input (client-side, no submit button).
   - **View-mode toggle**: three segmented buttons (grid / table / timeline), icon + Label. Active segment = violet fill + zinc-50 text; inactive = ghost, `muted-foreground`. Grid is default on load. Selected mode persists in URL query (`?view=`) so it is shareable/back-button-safe.
@@ -194,6 +196,7 @@ Unchanged from Phase 1. The app-name link in the header points to `/sessions`. N
 |---------|------|
 | Archive page title | "Sessions" |
 | Search box placeholder | "Search by theme, person, or artist" |
+| Clear search button | "Clear search" |
 | View toggle labels | "Grid" / "Table" / "Timeline" |
 | Date placeholder (null date) | "Date TBD" |
 | Session-card number prefix | "Session {n}" |
