@@ -172,7 +172,8 @@ export async function POST(request: Request) {
               };
             });
 
-          // Determine attribution: initials[0..3] → positions 1-4, 5-8, 9-12, 13-16
+          // Determine attribution: round-robin — initials[(position - 1) % 4]
+          // pos 1→initials[0], 2→initials[1], 3→initials[2], 4→initials[3], 5→initials[0], …
           const attributionParsed = parsed.initials !== null;
           const initials =
             parsed.initials !== null
@@ -289,7 +290,7 @@ export async function POST(request: Request) {
 
           let attributedContributorId: number | null = null;
           if (sessionPlan.attributionParsed && sessionPlan.initials) {
-            const slot = Math.floor((position - 1) / 4);
+            const slot = (position - 1) % 4;
             const contribInitials = sessionPlan.initials[slot];
             attributedContributorId =
               contribIdByInitials.get(contribInitials) ?? null;
