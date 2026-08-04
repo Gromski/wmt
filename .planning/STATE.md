@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 3 UI-SPEC approved
-last_updated: "2026-07-15T15:54:00.085Z"
-last_activity: 2026-07-14
+status: executing
+stopped_at: "Phase 3 Plan 01: Tasks 1-3 complete; awaiting human re-import (Task 4 checkpoint)"
+last_updated: "2026-08-04T09:08:15.155Z"
+last_activity: 2026-08-04 -- Phase 03 execution started
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 7
+  total_plans: 10
   completed_plans: 7
   percent: 50
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Interrogate 31 sessions of curated music to surface who each person really is as a music-chooser — and how the group compares
-**Current focus:** Phase 02 — import-pipeline
+**Current focus:** Phase 03 — archive-browsing
 
 ## Current Position
 
-Phase: 02 (import-pipeline) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-07-14
+Phase: 03 (archive-browsing) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 03
+Last activity: 2026-08-04 -- Phase 03 execution started
 
 Progress: [██████████] 100%
 
@@ -84,6 +84,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [02-02]: res.body null check in ImportTriggerCard instead of non-null assertion per biome lint rule
 - [Phase ?]: Drizzle timestamp_ms columns return Date objects — dashboard converts with Date.getTime() before passing as SessionDateRow.date prop
 - [Phase ?]: date PATCH route stores Date object via new Date(parsed) — Drizzle timestamp_ms set() requires Date|null not raw ms
+- [Phase ?]: youtubeUrl written onto the fallback track (first track without appleId, else position 1) in import route
 
 ### Pending Todos
 
@@ -108,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-15T15:54:00.080Z
-Stopped at: Phase 3 UI-SPEC approved
-Resume file: .planning/phases/03-archive-browsing/03-UI-SPEC.md
+Last session: 2026-08-04T09:08:15.149Z
+Stopped at: Phase 3 Plan 01: Tasks 1-3 complete; awaiting human re-import (Task 4 checkpoint)
+Resume file: .planning/phases/03-archive-browsing/03-01-PLAN.md
