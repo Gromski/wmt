@@ -39,6 +39,7 @@ interface ImportPlan {
       durationMs: number | null;
       isrc: string | null;
       appleId: string | null;
+      youtubeUrl: string | null;
     }>;
   }>;
   skippedPlaylistNames: string[]; // unmatched names — logged for OQ-1 follow-up
@@ -151,6 +152,14 @@ export async function POST(request: Request) {
           );
 
           // Build track records for positions 1..N (up to 16 tracks per playlist)
+          // youtubeUrl is parsed at the session level (from the description) — write it
+          // onto the fallback track: the first track without an appleId, or position 1
+          // if every track has an appleId (simplest safe rule per PATTERNS.md).
+          const fallbackIdx = items.findIndex(
+            (item) => !item.relationships?.catalog?.data?.[0]?.id,
+          );
+          const youtubeUrlTargetIdx = fallbackIdx === -1 ? 0 : fallbackIdx;
+
           const tracks: ImportPlan["sessionPlans"][0]["tracks"] = items
             .slice(0, 16)
             .map((item, idx) => {
@@ -169,6 +178,8 @@ export async function POST(request: Request) {
                 appleId: catalogItem?.id ?? null,
                 isrc: catalogItem?.attributes?.isrc ?? null,
                 releaseYear,
+                youtubeUrl:
+                  idx === youtubeUrlTargetIdx ? parsed.youtubeUrl : null,
               };
             });
 
@@ -262,6 +273,7 @@ export async function POST(request: Request) {
               releaseYear: track.releaseYear ?? undefined,
               durationMs: track.durationMs ?? undefined,
               isrc: track.isrc ?? undefined,
+              youtubeUrl: track.youtubeUrl ?? undefined,
             });
             trackMeta.push({
               planSessionIndex: sessionIdx,
