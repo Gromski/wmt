@@ -87,6 +87,40 @@ function run() {
   assert.ok(!SESSION_PLAYLIST_RE.test("Replay 2021"));
   assert.ok(!SESSION_PLAYLIST_RE.test("Sunday Morning 6 Music"));
 
+  // MIA/AWOL absence handling — attribute over present contributors only
+  {
+    const result = parsePlaylistDescription(
+      "Warwick Massive Tunage 28",
+      "One hit wonders from four decades. MW, JG, IT, JS = MIA",
+    );
+    assert.deepEqual(result.initials, ["MW", "JG", "IT"]);
+  }
+  {
+    const result = parsePlaylistDescription(
+      "Warwick Massive Tunage 25",
+      "Rainbow, 4 colours. JG, IT, MW. JS MIA.",
+    );
+    assert.deepEqual(result.initials, ["JG", "IT", "MW"]);
+  }
+  {
+    // AWOL variant
+    const result = parsePlaylistDescription("x", "MW, JG, IT, JS = AWOL");
+    assert.deepEqual(result.initials, ["MW", "JG", "IT"]);
+  }
+  {
+    // Regression: no absence marker → unchanged four-person list
+    const result = parsePlaylistDescription("x", "MW, JG, JS, IT");
+    assert.deepEqual(result.initials, ["MW", "JG", "JS", "IT"]);
+  }
+  {
+    // Regression: parenthetical (session-13 shape), no absence marker
+    const result = parsePlaylistDescription(
+      "x",
+      "JG (a), JS (b), IT, MW (c). JG, JS, IT, MW",
+    );
+    assert.deepEqual(result.initials, ["JG", "JS", "IT", "MW"]);
+  }
+
   console.log("parse-playlist.test.ts: all assertions passed");
 }
 

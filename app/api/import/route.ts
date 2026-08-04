@@ -29,7 +29,7 @@ interface ImportPlan {
     description: string | null;
     appleMusicPlaylistId: string;
     attributionParsed: boolean; // false when parsed.initials === null (IMPORT-08)
-    initials: [string, string, string, string] | null;
+    initials: string[] | null;
     tracks: Array<{
       position: number; // 1..16
       title: string;
@@ -183,13 +183,11 @@ export async function POST(request: Request) {
               };
             });
 
-          // Determine attribution: round-robin — initials[(position - 1) % 4]
-          // pos 1→initials[0], 2→initials[1], 3→initials[2], 4→initials[3], 5→initials[0], …
+          // Determine attribution: round-robin — initials[(position - 1) % initials.length]
+          // pos 1→initials[0], 2→initials[1], … wraps over the attendee count (usually 4,
+          // fewer when a contributor is marked MIA/AWOL — see ABSENCE_RE in parse-playlist.ts)
           const attributionParsed = parsed.initials !== null;
-          const initials =
-            parsed.initials !== null
-              ? (parsed.initials as [string, string, string, string])
-              : null;
+          const initials = parsed.initials;
 
           plan.sessionPlans.push({
             sessionNumber: parsed.sessionNumber,
@@ -302,7 +300,7 @@ export async function POST(request: Request) {
 
           let attributedContributorId: number | null = null;
           if (sessionPlan.attributionParsed && sessionPlan.initials) {
-            const slot = (position - 1) % 4;
+            const slot = (position - 1) % sessionPlan.initials.length;
             const contribInitials = sessionPlan.initials[slot];
             attributedContributorId =
               contribIdByInitials.get(contribInitials) ?? null;

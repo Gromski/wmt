@@ -18,6 +18,21 @@ export const INITIALS_RE =
   /\b([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2})\b/;
 
 /**
+ * Matches an absence marker "<initials> MIA" / "<initials> = MIA" / "<initials> AWOL"
+ * (case-insensitive, global). Captures the absent contributor's initials so they can be
+ * excluded from round-robin attribution (e.g. "JS = MIA" → 3-person session). Use ONLY via
+ * description.matchAll(ABSENCE_RE) (never .test()/.exec()) to avoid global-regex lastIndex state.
+ */
+export const ABSENCE_RE = /\b(MW|JG|JS|IT)\b\s*=?\s*(?:MIA|AWOL)\b/gi;
+
+/**
+ * Matches three comma-separated two-uppercase-letter initials blocks. Consulted ONLY as a
+ * fallback when an absence marker is present and the strict four-initials INITIALS_RE match
+ * fails (e.g. "JG, IT, MW. JS MIA." lists only three attendees).
+ */
+export const INITIALS_TRIO_RE = /\b([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2})\b/;
+
+/**
  * Matches the first standalone integer in the playlist name.
  * Used to extract the session number from names like "Session 07 — Desert Island Discs".
  */
@@ -65,11 +80,31 @@ export function parsePlaylistDescription(
   // Covers: "Session 07 — Theme", "Session 7 - Theme", "Session 7: Theme"
   const theme = name.replace(/session\s*\d+\s*[-–—:]?\s*/i, "").trim();
 
-  // Extract initials from description (null when description is undefined or no match)
+  // Extract the strict four-person initials list exactly as before.
   const initialsMatch = description?.match(INITIALS_RE);
-  const initials = initialsMatch
+  let initials: string[] | null = initialsMatch
     ? [initialsMatch[1], initialsMatch[2], initialsMatch[3], initialsMatch[4]]
     : null; // null → attributionParsed = false (IMPORT-08)
+
+  // Absence handling (Finding: MIA/AWOL sessions). When a contributor is marked absent,
+  // drop them so attribution round-robins only over those present. A description WITHOUT an
+  // absence marker is unaffected — the strict four-person result above is returned verbatim.
+  if (description) {
+    const absent = new Set<string>();
+    for (const m of description.matchAll(ABSENCE_RE))
+      absent.add(m[1].toUpperCase());
+    if (absent.size > 0) {
+      if (!initials) {
+        // Attendees listed as only three comma-separated initials (e.g. "JG, IT, MW. JS MIA.")
+        const trio = description.match(INITIALS_TRIO_RE);
+        initials = trio ? [trio[1], trio[2], trio[3]] : null;
+      }
+      if (initials) {
+        const present = initials.filter((i) => !absent.has(i.toUpperCase()));
+        initials = present.length >= 2 ? present : null;
+      }
+    }
+  }
 
   // Extract YouTube fallback URL from description (Finding 2)
   const ytMatch = description?.match(YOUTUBE_RE);
