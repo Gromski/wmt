@@ -24,11 +24,21 @@ export const INITIALS_RE =
 export const SESSION_NUM_RE = /\b(\d+)\b/;
 
 /**
+ * Matches a YouTube watch URL in a playlist description.
+ * Covers https://www.youtube.com/watch?v=... and https://youtu.be/... (Finding 2).
+ * NOTE: real-world description format is LOW confidence (RESEARCH.md OQ-1) — kept
+ * defensive across both common forms; do not narrow to a single form.
+ */
+export const YOUTUBE_RE =
+  /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/;
+
+/**
  * Parses an Apple Music playlist name and description into session metadata.
  *
  * @param name - The playlist name (e.g. "Session 07 — Desert Island Discs")
  * @param description - The playlist description (e.g. "MW, JG, JS, IT") or undefined
- * @returns sessionNumber, theme, and initials (null when unparseable → IMPORT-08 trigger)
+ * @returns sessionNumber, theme, initials (null when unparseable → IMPORT-08 trigger),
+ *          and youtubeUrl (null when no YouTube URL is present in the description)
  */
 export function parsePlaylistDescription(
   name: string,
@@ -37,6 +47,7 @@ export function parsePlaylistDescription(
   sessionNumber: number;
   theme: string;
   initials: string[] | null;
+  youtubeUrl: string | null;
 } {
   // Extract session number from playlist name
   const numMatch = name.match(SESSION_NUM_RE);
@@ -52,5 +63,9 @@ export function parsePlaylistDescription(
     ? [initialsMatch[1], initialsMatch[2], initialsMatch[3], initialsMatch[4]]
     : null; // null → attributionParsed = false (IMPORT-08)
 
-  return { sessionNumber, theme, initials };
+  // Extract YouTube fallback URL from description (Finding 2)
+  const ytMatch = description?.match(YOUTUBE_RE);
+  const youtubeUrl = ytMatch ? ytMatch[0] : null;
+
+  return { sessionNumber, theme, initials, youtubeUrl };
 }

@@ -115,6 +115,7 @@ export const tracks = sqliteTable("tracks", {
   albumName: text("album_name"),
   releaseYear: integer("release_year"),
   durationMs: integer("duration_ms"),
+  youtubeUrl: text("youtube_url"), // nullable — Finding 2; fallback tracks only
 });
 
 export const sessionTracks = sqliteTable("session_tracks", {
