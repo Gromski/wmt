@@ -95,11 +95,11 @@ Plans:
   4. User can view a chronological timeline of all sessions
   5. User can search or filter sessions by theme keyword, person name, or artist name
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Data layer (Findings 1 & 2): add nullable `youtube_url` to `tracks`, extend `lib/parse-playlist.ts` to extract YouTube URLs, thread youtubeUrl through `app/api/import/route.ts`; BLOCKING `npm run db:push`; human re-import checkpoint (corrects round-robin attribution + populates youtubeUrl) — BROWSE-03 data
+- [x] 03-01-PLAN.md — Data layer (Findings 1 & 2): add nullable `youtube_url` to `tracks`, extend `lib/parse-playlist.ts` to extract YouTube URLs, thread youtubeUrl through `app/api/import/route.ts`; BLOCKING `npm run db:push`; human re-import checkpoint (corrects round-robin attribution + populates youtubeUrl) — BROWSE-03 data
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -136,5 +136,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
-| 3. Archive Browsing | 0/3 | Not started | - |
+| 3. Archive Browsing | 1/3 | In Progress|  |
 | 4. Analytics | 0/TBD | Not started | - |
