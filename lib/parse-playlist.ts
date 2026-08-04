@@ -24,6 +24,14 @@ export const INITIALS_RE =
 export const SESSION_NUM_RE = /\b(\d+)\b/;
 
 /**
+ * Matches the session playlist naming convention "Warwick Massive Tunage <N>"
+ * and captures the session number. Used to filter the Apple Music library down to
+ * actual session playlists — the permissive SESSION_NUM_RE swept in editorial/seasonal
+ * playlists whose numbers collided on the unique session_number column (Open Question 1).
+ */
+export const SESSION_PLAYLIST_RE = /warwick massive tunage\s+(\d+)/i;
+
+/**
  * Matches a YouTube watch URL in a playlist description.
  * Covers https://www.youtube.com/watch?v=... and https://youtu.be/... (Finding 2).
  * NOTE: real-world description format is LOW confidence (RESEARCH.md OQ-1) — kept

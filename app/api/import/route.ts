@@ -13,7 +13,7 @@ import { fetchArtistTags } from "@/lib/lastfm-client";
 import {
   KNOWN_CONTRIBUTORS,
   parsePlaylistDescription,
-  SESSION_NUM_RE,
+  SESSION_PLAYLIST_RE,
 } from "@/lib/parse-playlist";
 
 export const maxDuration = 300; // Explicit — matches Vercel Hobby default (RESEARCH §State of the Art)
@@ -91,11 +91,11 @@ export async function POST(request: Request) {
           musicUserToken,
         );
 
-        // Filter to session playlists (any name containing a standalone integer)
+        // Filter to session playlists ("Warwick Massive Tunage N" naming convention — Open Question 1 refinement)
         const skippedPlaylistNames: string[] = [];
         const sessionPlaylists = allPlaylists.filter((p) => {
           const name = p.attributes?.name ?? "";
-          if (SESSION_NUM_RE.test(name)) return true;
+          if (SESSION_PLAYLIST_RE.test(name)) return true;
           console.log("[import] skipped playlist:", name);
           skippedPlaylistNames.push(name);
           return false;

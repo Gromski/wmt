@@ -10,7 +10,11 @@
 
 import assert from "node:assert/strict";
 
-import { parsePlaylistDescription, YOUTUBE_RE } from "./parse-playlist";
+import {
+  parsePlaylistDescription,
+  SESSION_PLAYLIST_RE,
+  YOUTUBE_RE,
+} from "./parse-playlist";
 
 function run() {
   // youtubeUrl = short youtu.be URL when description contains one
@@ -65,6 +69,23 @@ function run() {
   assert.ok(YOUTUBE_RE.test("https://youtu.be/dQw4w9WgXcQ"));
   assert.ok(YOUTUBE_RE.test("https://www.youtube.com/watch?v=dQw4w9WgXcQ"));
   assert.ok(!YOUTUBE_RE.test("not a url"));
+
+  // SESSION_PLAYLIST_RE matches "Warwick Massive Tunage N" and captures the number
+  assert.ok(SESSION_PLAYLIST_RE.test("Warwick Massive Tunage 1"));
+  assert.ok(SESSION_PLAYLIST_RE.test("Warwick Massive Tunage 22"));
+  assert.ok(SESSION_PLAYLIST_RE.test("Warwick Massive Tunage 32"));
+  assert.equal(
+    SESSION_PLAYLIST_RE.exec("Warwick Massive Tunage 22")?.[1],
+    "22",
+  );
+
+  // SESSION_PLAYLIST_RE does NOT match editorial/seasonal playlists (Open Question 1 fix)
+  assert.ok(!SESSION_PLAYLIST_RE.test("Autumnal Tracks '22"));
+  assert.ok(!SESSION_PLAYLIST_RE.test("Winter Warmers '22"));
+  assert.ok(!SESSION_PLAYLIST_RE.test("Ibiza 2026"));
+  assert.ok(!SESSION_PLAYLIST_RE.test("Soul 45"));
+  assert.ok(!SESSION_PLAYLIST_RE.test("Replay 2021"));
+  assert.ok(!SESSION_PLAYLIST_RE.test("Sunday Morning 6 Music"));
 
   console.log("parse-playlist.test.ts: all assertions passed");
 }
