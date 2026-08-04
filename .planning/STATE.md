@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 3 Plan 01: OQ1 import-filter fix committed (3f3371c); awaiting human re-import retry (Task 4 checkpoint)"
-last_updated: "2026-08-04T14:01:21.516Z"
+stopped_at: "Phase 3 Plan 01: MIA/AWOL attribution fix committed (374f27e); awaiting human re-import retry (Task 4 checkpoint)"
+last_updated: "2026-08-04T16:11:42.892Z"
 last_activity: 2026-08-04 -- Phase 03 execution started
 progress:
   total_phases: 4
@@ -86,6 +86,7 @@ Recent decisions affecting current work:
 - [Phase ?]: date PATCH route stores Date object via new Date(parsed) — Drizzle timestamp_ms set() requires Date|null not raw ms
 - [Phase ?]: youtubeUrl written onto the fallback track (first track without appleId, else position 1) in import route
 - [Phase ?]: [Phase 3, Plan 01] Deviation: restricted playlist import filter to SESSION_PLAYLIST_RE ("Warwick Massive Tunage N") after re-import failed with UNIQUE constraint on session_number — permissive SESSION_NUM_RE swept in editorial/seasonal playlists (OQ1)
+- [Phase ?]: [Phase 3, Plan 01] Deviation: MIA/AWOL absence handling — attribute round-robin over present contributors only (sessions 25, 28 are 3-person); ABSENCE_RE + INITIALS_TRIO_RE added, attribution slot modulus now uses initials.length
 
 ### Pending Todos
 
@@ -110,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-04T14:01:21.505Z
-Stopped at: Phase 3 Plan 01: OQ1 import-filter fix committed (3f3371c); awaiting human re-import retry (Task 4 checkpoint)
+Last session: 2026-08-04T16:11:42.889Z
+Stopped at: Phase 3 Plan 01: MIA/AWOL attribution fix committed (374f27e); awaiting human re-import retry (Task 4 checkpoint)
 Resume file: .planning/phases/03-archive-browsing/03-01-PLAN.md
