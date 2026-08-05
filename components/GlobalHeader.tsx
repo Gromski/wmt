@@ -27,7 +27,7 @@ export function GlobalHeader() {
   return (
     <header className="sticky top-0 z-50 w-full bg-card border-b border-border h-14">
       <div className="mx-auto flex h-full max-w-[1080px] items-center justify-between px-6">
-        <Link href="/" className="text-xl font-semibold">
+        <Link href="/sessions" className="text-xl font-semibold">
           Warwick Massive Tunage
         </Link>
 

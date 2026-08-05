@@ -115,6 +115,12 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Phase 3 UI-SPEC — fixed four-person contributor colour map (LOCKED) */
+  --contributor-mw: oklch(0.554 0.252 296); /* violet-600 */
+  --contributor-jg: oklch(0.546 0.215 262); /* blue-600 */
+  --contributor-js: oklch(0.769 0.156 70); /* amber-500 */
+  --contributor-it: oklch(0.596 0.145 163); /* emerald-600 */
 }
 
 @layer base {
