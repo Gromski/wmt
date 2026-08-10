@@ -10,12 +10,14 @@ export const KNOWN_CONTRIBUTORS: Record<string, string> = {
 };
 
 /**
- * Matches four comma-separated two-uppercase-letter initials blocks.
- * Word-boundary anchors tolerate noise before/after the initials string.
+ * Matches four comma-separated initials blocks restricted to the four known contributors
+ * (MW, JG, JS, IT). Word-boundary anchors tolerate noise before/after the initials string.
  * e.g. "Curated by MW, JG, JS, IT" or "MW, JG, JS, IT — some other text"
+ * Restricting to known contributors (rather than any [A-Z]{2}) prevents an unrelated
+ * four-token match from being accepted as parsed attribution (C2).
  */
 export const INITIALS_RE =
-  /\b([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2})\b/;
+  /\b(MW|JG|JS|IT),\s*(MW|JG|JS|IT),\s*(MW|JG|JS|IT),\s*(MW|JG|JS|IT)\b/;
 
 /**
  * Matches an absence marker "<initials> MIA" / "<initials> = MIA" / "<initials> AWOL"
@@ -26,11 +28,13 @@ export const INITIALS_RE =
 export const ABSENCE_RE = /\b(MW|JG|JS|IT)\b\s*=?\s*(?:MIA|AWOL)\b/gi;
 
 /**
- * Matches three comma-separated two-uppercase-letter initials blocks. Consulted ONLY as a
- * fallback when an absence marker is present and the strict four-initials INITIALS_RE match
- * fails (e.g. "JG, IT, MW. JS MIA." lists only three attendees).
+ * Matches three comma-separated initials blocks restricted to the four known contributors
+ * (MW, JG, JS, IT). Consulted ONLY as a fallback when an absence marker is present and the
+ * strict four-initials INITIALS_RE match fails (e.g. "JG, IT, MW. JS MIA." lists only three
+ * attendees).
  */
-export const INITIALS_TRIO_RE = /\b([A-Z]{2}),\s*([A-Z]{2}),\s*([A-Z]{2})\b/;
+export const INITIALS_TRIO_RE =
+  /\b(MW|JG|JS|IT),\s*(MW|JG|JS|IT),\s*(MW|JG|JS|IT)\b/;
 
 /**
  * Matches the first standalone integer in the playlist name.

@@ -121,6 +121,13 @@ function run() {
     assert.deepEqual(result.initials, ["JG", "JS", "IT", "MW"]);
   }
 
+  // C2: initials matching is restricted to known contributors — unrelated 4-token
+  // matches are no longer accepted as parsed attribution
+  {
+    const result = parsePlaylistDescription("x", "AB, CD, EF, GH");
+    assert.equal(result.initials, null);
+  }
+
   console.log("parse-playlist.test.ts: all assertions passed");
 }
 
