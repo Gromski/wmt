@@ -18,8 +18,8 @@
 - [x] **BROWSE-01**: User can see a list of all sessions with session number, theme, date, and the four contributors
 - [x] **BROWSE-02**: User can open any session and see all 16 tracks, clearly grouped under the person who chose them (in play order)
 - [x] **BROWSE-03**: Each track has a link that opens it in Spotify (or Apple Music if both are imported)
-- [ ] **BROWSE-04**: User can browse a chronological timeline view showing all sessions across time
-- [ ] **BROWSE-05**: User can search or filter sessions by theme keyword, person name, or artist name
+- [x] **BROWSE-04**: User can browse a chronological timeline view showing all sessions across time
+- [x] **BROWSE-05**: User can search or filter sessions by theme keyword, person name, or artist name
 
 ### Analytics
 
@@ -77,8 +77,8 @@
 | BROWSE-01 | Phase 3 — Archive Browsing | Complete |
 | BROWSE-02 | Phase 3 — Archive Browsing | Complete |
 | BROWSE-03 | Phase 3 — Archive Browsing | Complete |
-| BROWSE-04 | Phase 3 — Archive Browsing | Pending |
-| BROWSE-05 | Phase 3 — Archive Browsing | Pending |
+| BROWSE-04 | Phase 3 — Archive Browsing | Complete |
+| BROWSE-05 | Phase 3 — Archive Browsing | Complete |
 | ANALYTICS-01 | Phase 4 — Analytics | Pending |
 | ANALYTICS-02 | Phase 4 — Analytics | Pending |
 | ANALYTICS-03 | Phase 4 — Analytics | Pending |

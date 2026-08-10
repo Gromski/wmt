@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Access & Shell** - Authenticated private dashboard and public read-only URL
 - [x] **Phase 2: Import Pipeline** - Spotify/Apple Music import, attribution parsing, enrichment, date entry (completed 2026-07-14)
-- [ ] **Phase 3: Archive Browsing** - Session list, track detail, timeline, search and filter
+- [x] **Phase 3: Archive Browsing** - Session list, track detail, timeline, search and filter (completed 2026-08-10)
 - [ ] **Phase 4: Analytics** - Taste profiles, group overlap, wildcard detection, Wrapped cards
 
 ## Phase Details
@@ -95,7 +95,7 @@ Plans:
   4. User can view a chronological timeline of all sessions
   5. User can search or filter sessions by theme keyword, person name, or artist name
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 **Wave 1**
 
@@ -107,7 +107,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-03-PLAN.md — Interactive slice: extend ArchiveClient with grid/table/timeline view toggle (URL `?view=` persistence) and client-side search across theme/person/artist; SessionTimeline component — BROWSE-04, BROWSE-05
+- [x] 03-03-PLAN.md — Interactive slice: extend ArchiveClient with grid/table/timeline view toggle (URL `?view=` persistence) and client-side search across theme/person/artist; SessionTimeline component — BROWSE-04, BROWSE-05
 
 **UI hint**: yes
 
@@ -136,5 +136,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
-| 3. Archive Browsing | 2/3 | In Progress|  |
+| 3. Archive Browsing | 3/3 | Complete   | 2026-08-10 |
 | 4. Analytics | 0/TBD | Not started | - |
