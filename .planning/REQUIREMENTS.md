@@ -15,8 +15,8 @@
 
 ### Browsing
 
-- [ ] **BROWSE-01**: User can see a list of all sessions with session number, theme, date, and the four contributors
-- [ ] **BROWSE-02**: User can open any session and see all 16 tracks, clearly grouped under the person who chose them (in play order)
+- [x] **BROWSE-01**: User can see a list of all sessions with session number, theme, date, and the four contributors
+- [x] **BROWSE-02**: User can open any session and see all 16 tracks, clearly grouped under the person who chose them (in play order)
 - [x] **BROWSE-03**: Each track has a link that opens it in Spotify (or Apple Music if both are imported)
 - [ ] **BROWSE-04**: User can browse a chronological timeline view showing all sessions across time
 - [ ] **BROWSE-05**: User can search or filter sessions by theme keyword, person name, or artist name
@@ -74,8 +74,8 @@
 | IMPORT-06 | Phase 2 — Import Pipeline | Complete |
 | IMPORT-07 | Phase 2 — Import Pipeline | Complete |
 | IMPORT-08 | Phase 2 — Import Pipeline | Complete |
-| BROWSE-01 | Phase 3 — Archive Browsing | Pending |
-| BROWSE-02 | Phase 3 — Archive Browsing | Pending |
+| BROWSE-01 | Phase 3 — Archive Browsing | Complete |
+| BROWSE-02 | Phase 3 — Archive Browsing | Complete |
 | BROWSE-03 | Phase 3 — Archive Browsing | Complete |
 | BROWSE-04 | Phase 3 — Archive Browsing | Pending |
 | BROWSE-05 | Phase 3 — Archive Browsing | Pending |
