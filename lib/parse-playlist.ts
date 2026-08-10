@@ -60,6 +60,38 @@ export const YOUTUBE_RE =
   /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/;
 
 /**
+ * Derives the session theme from the description's challenge text — the portion before the
+ * attribution/initials string. Prefers a short clean lead sentence ("Pick your own theme.")
+ * but keeps the full text for long single-sentence or numbered-list challenges. Falls back to
+ * the playlist name when no usable text exists (e.g. the description is only an initials list).
+ */
+function deriveThemeFromDescription(
+  name: string,
+  description: string | undefined,
+): string {
+  if (!description) return name;
+  let cut = description.length;
+  for (const re of [INITIALS_RE, INITIALS_TRIO_RE]) {
+    const m = description.match(re);
+    if (m && m.index !== undefined && m.index < cut) cut = m.index;
+  }
+  const abs = description.match(/\b(MW|JG|JS|IT)\b\s*=?\s*(?:MIA|AWOL)\b/i);
+  if (abs && abs.index !== undefined && abs.index < cut) cut = abs.index;
+  const head = description.slice(0, cut).replace(/\s+/g, " ").trim();
+  if (!head || !/[a-z]/i.test(head)) return name;
+  const enumerated = /(^|\s)[1-9][.)]\s/.test(head);
+  let theme: string;
+  if (enumerated) {
+    theme = head;
+  } else {
+    const lead = head.match(/^(.{4,60}?[.!?])(\s|$)/);
+    theme = lead && lead[1].length < head.length ? lead[1] : head;
+  }
+  theme = theme.replace(/[\s.,;:—–-]+$/, "").trim();
+  return theme || name;
+}
+
+/**
  * Parses an Apple Music playlist name and description into session metadata.
  *
  * @param name - The playlist name (e.g. "Session 07 — Desert Island Discs")
@@ -80,9 +112,8 @@ export function parsePlaylistDescription(
   const numMatch = name.match(SESSION_NUM_RE);
   const sessionNumber = numMatch ? Number.parseInt(numMatch[1], 10) : 0;
 
-  // Strip leading "Session N — " prefix (em-dash, en-dash, hyphen, colon all accepted)
-  // Covers: "Session 07 — Theme", "Session 7 - Theme", "Session 7: Theme"
-  const theme = name.replace(/session\s*\d+\s*[-–—:]?\s*/i, "").trim();
+  // Derive theme from the description's challenge text (falls back to the playlist name).
+  const theme = deriveThemeFromDescription(name, description);
 
   // Extract the strict four-person initials list exactly as before.
   const initialsMatch = description?.match(INITIALS_RE);

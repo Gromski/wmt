@@ -56,15 +56,55 @@ function run() {
     assert.equal(result.youtubeUrl, null);
   }
 
-  // Regression: existing sessionNumber / theme / initials extraction unchanged
+  // Regression: sessionNumber / initials extraction unchanged; theme now derives from the
+  // description — since this description is only an initials list, theme falls back to name.
   {
     const result = parsePlaylistDescription(
       "Session 07 — Desert Island Discs",
       "MW, JG, JS, IT",
     );
     assert.equal(result.sessionNumber, 7);
-    assert.equal(result.theme, "Desert Island Discs");
+    assert.equal(result.theme, "Session 07 — Desert Island Discs");
     assert.deepEqual(result.initials, ["MW", "JG", "JS", "IT"]);
+  }
+
+  // theme derives from the description's challenge text (short lead sentence)
+  {
+    const result = parsePlaylistDescription(
+      "Warwick Massive Tunage 24",
+      "Gods and monster. MW, JG, JS, IT.",
+    );
+    assert.equal(result.theme, "Gods and monster");
+  }
+
+  // theme derives from description with parenthetical noise after the lead sentence
+  {
+    const result = parsePlaylistDescription(
+      "Warwick Massive Tunage 13",
+      "Pick your own theme. JG (a), JS (b), IT, MW (c). JG, JS, IT, MW",
+    );
+    assert.equal(result.theme, "Pick your own theme");
+  }
+
+  // theme keeps a full numbered-list challenge text intact
+  {
+    const result = parsePlaylistDescription(
+      "Warwick Massive Tunage 18",
+      "1. Mammal 2. Bird 3. Reptile/Amphibian 4. Insect/Arachnid. JS, IT, MW, JG",
+    );
+    assert.equal(
+      result.theme,
+      "1. Mammal 2. Bird 3. Reptile/Amphibian 4. Insect/Arachnid",
+    );
+  }
+
+  // theme falls back to name when description is undefined
+  {
+    const result = parsePlaylistDescription(
+      "Warwick Massive Tunage 1",
+      undefined,
+    );
+    assert.equal(result.theme, "Warwick Massive Tunage 1");
   }
   assert.ok(YOUTUBE_RE.test("https://youtu.be/dQw4w9WgXcQ"));
   assert.ok(YOUTUBE_RE.test("https://www.youtube.com/watch?v=dQw4w9WgXcQ"));
