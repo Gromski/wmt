@@ -12,6 +12,7 @@ import { db } from "@/lib/db";
 import { fetchArtistTags } from "@/lib/lastfm-client";
 import {
   KNOWN_CONTRIBUTORS,
+  parseFallbackTracks,
   parsePlaylistDescription,
   SESSION_PLAYLIST_RE,
 } from "@/lib/parse-playlist";
@@ -40,6 +41,7 @@ interface ImportPlan {
       isrc: string | null;
       appleId: string | null;
       youtubeUrl: string | null;
+      attributionInitials: string | null; // null = round-robin; non-null = explicit named-contributor override (BROWSE-03)
     }>;
   }>;
   skippedPlaylistNames: string[]; // unmatched names — logged for OQ-1 follow-up
@@ -151,16 +153,12 @@ export async function POST(request: Request) {
             p.attributes?.description?.standard,
           );
 
-          // Build track records for positions 1..N (up to 16 tracks per playlist)
-          // youtubeUrl is parsed at the session level (from the description) — write it
-          // onto the fallback track: the first track without an appleId, or position 1
-          // if every track has an appleId (simplest safe rule per PATTERNS.md).
-          const fallbackIdx = items.findIndex(
-            (item) => !item.relationships?.catalog?.data?.[0]?.id,
-          );
-          const youtubeUrlTargetIdx = fallbackIdx === -1 ? 0 : fallbackIdx;
-
-          const tracks: ImportPlan["sessionPlans"][0]["tracks"] = items
+          // Build track records for positions 1..N (up to 16 tracks per playlist).
+          // Apple Music tracks no longer carry a youtubeUrl — the old "first track
+          // without an appleId, else position 1" heuristic mis-attributed fallback
+          // links (BROWSE-03 / UAT test 4). YouTube fallback tracks are now parsed
+          // as their OWN entries below and appended at session end.
+          const appleTracks: ImportPlan["sessionPlans"][0]["tracks"] = items
             .slice(0, 16)
             .map((item, idx) => {
               const catalogItem = item.relationships?.catalog?.data?.[0];
@@ -178,10 +176,37 @@ export async function POST(request: Request) {
                 appleId: catalogItem?.id ?? null,
                 isrc: catalogItem?.attributes?.isrc ?? null,
                 releaseYear,
-                youtubeUrl:
-                  idx === youtubeUrlTargetIdx ? parsed.youtubeUrl : null,
+                youtubeUrl: null,
+                attributionInitials: null,
               };
             });
+
+          // Fallback tracks (YouTube-only, no Apple catalog match) are parsed entirely
+          // from the description text and appended AFTER all Apple Music tracks. The
+          // session detail page renders a flat list ordered by session_tracks.position
+          // with a per-track contributor chip (no per-contributor section headers), so
+          // appending at session end keeps Apple round-robin positions stable while the
+          // explicit attribution below still shows the correct contributor chip.
+          const fallbackTracks: ImportPlan["sessionPlans"][0]["tracks"] =
+            parseFallbackTracks(p.attributes?.description?.standard).map(
+              (fallback, fallbackIdx) => ({
+                position: appleTracks.length + fallbackIdx + 1,
+                title: fallback.title,
+                artistName: fallback.artist,
+                albumName: null,
+                releaseYear: null,
+                durationMs: null,
+                isrc: null,
+                appleId: null,
+                youtubeUrl: fallback.youtubeUrl,
+                attributionInitials: fallback.initials,
+              }),
+            );
+
+          const tracks: ImportPlan["sessionPlans"][0]["tracks"] = [
+            ...appleTracks,
+            ...fallbackTracks,
+          ];
 
           // Determine attribution: round-robin — initials[(position - 1) % initials.length]
           // pos 1→initials[0], 2→initials[1], … wraps over the attendee count (usually 4,
@@ -214,6 +239,7 @@ export async function POST(request: Request) {
         interface TrackMeta {
           planSessionIndex: number;
           position: number;
+          attributionInitials: string | null;
         }
         const trackRows: (typeof schema.tracks.$inferInsert)[] = [];
         const trackMeta: TrackMeta[] = [];
@@ -237,6 +263,7 @@ export async function POST(request: Request) {
             trackMeta.push({
               planSessionIndex: sessionIdx,
               position: track.position,
+              attributionInitials: track.attributionInitials,
             });
           }
         }
@@ -330,14 +357,21 @@ export async function POST(request: Request) {
           const sessionTrackRows: (typeof schema.sessionTracks.$inferInsert)[] =
             [];
           for (let flatIdx = 0; flatIdx < insertedTracks.length; flatIdx++) {
-            const { planSessionIndex, position } = trackMeta[flatIdx];
+            const { planSessionIndex, position, attributionInitials } =
+              trackMeta[flatIdx];
             const sessionPlan = plan.sessionPlans[planSessionIndex];
             const sessionId = insertedSessions[planSessionIndex]?.id;
 
             if (sessionId === undefined) continue;
 
             let attributedContributorId: number | null = null;
-            if (sessionPlan.attributionParsed && sessionPlan.initials) {
+            if (attributionInitials !== null) {
+              // Fallback track — explicit named-contributor attribution (BROWSE-03),
+              // bypasses round-robin entirely. contribIdByInitials contains all four
+              // upserted contributors, so this resolves even for a 3-person session.
+              attributedContributorId =
+                contribIdByInitials.get(attributionInitials) ?? null;
+            } else if (sessionPlan.attributionParsed && sessionPlan.initials) {
               const slot = (position - 1) % sessionPlan.initials.length;
               const contribInitials = sessionPlan.initials[slot];
               attributedContributorId =
