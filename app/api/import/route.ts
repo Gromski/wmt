@@ -209,46 +209,7 @@ export async function POST(request: Request) {
           message: `Plan built, ${plan.sessionPlans.length} sessions ready for DB write`,
         });
 
-        // ── DB write phase ─────────────────────────────────────────────────
-        // Replace-all (D-04): delete child tables first, then parents
-        await db.batch([
-          db.delete(schema.artistTags),
-          db.delete(schema.sessionTracks),
-          db.delete(schema.tracks),
-          db.delete(schema.sessions),
-        ]);
-
-        // Upsert the four canonical contributors (never deleted)
-        const contributorRows = Object.entries(KNOWN_CONTRIBUTORS).map(
-          ([initials, name]) => ({ initials, name }),
-        );
-        await db
-          .insert(schema.contributors)
-          .values(contributorRows)
-          .onConflictDoNothing();
-
-        const insertedContribs = await db.select().from(schema.contributors);
-        const contribIdByInitials = new Map(
-          insertedContribs.map((c) => [c.initials, c.id]),
-        );
-
-        // Insert sessions
-        const sessionRows = plan.sessionPlans.map((sp) => ({
-          sessionNumber: sp.sessionNumber,
-          theme: sp.theme,
-          description: sp.description,
-          appleMusicPlaylistId: sp.appleMusicPlaylistId,
-          attributionParsed: sp.attributionParsed,
-        }));
-
-        let insertedSessions: { id: number }[] = [];
-        if (sessionRows.length > 0) {
-          insertedSessions = await db
-            .insert(schema.sessions)
-            .values(sessionRows)
-            .returning({ id: schema.sessions.id });
-        }
-
+        // ── Build phase (pure — derived from `plan` only, no DB writes yet) ──
         // Insert tracks (flattened, tracking session+position for sessionTracks)
         interface TrackMeta {
           planSessionIndex: number;
@@ -280,48 +241,13 @@ export async function POST(request: Request) {
           }
         }
 
-        let insertedTracks: { id: number }[] = [];
-        if (trackRows.length > 0) {
-          insertedTracks = await db
-            .insert(schema.tracks)
-            .values(trackRows)
-            .returning({ id: schema.tracks.id });
-        }
-
-        // Build session_tracks join rows
-        const sessionTrackRows: (typeof schema.sessionTracks.$inferInsert)[] =
-          [];
-        for (let flatIdx = 0; flatIdx < insertedTracks.length; flatIdx++) {
-          const { planSessionIndex, position } = trackMeta[flatIdx];
-          const sessionPlan = plan.sessionPlans[planSessionIndex];
-          const sessionId = insertedSessions[planSessionIndex]?.id;
-
-          if (sessionId === undefined) continue;
-
-          let attributedContributorId: number | null = null;
-          if (sessionPlan.attributionParsed && sessionPlan.initials) {
-            const slot = (position - 1) % sessionPlan.initials.length;
-            const contribInitials = sessionPlan.initials[slot];
-            attributedContributorId =
-              contribIdByInitials.get(contribInitials) ?? null;
-          }
-
-          sessionTrackRows.push({
-            sessionId,
-            trackId: insertedTracks[flatIdx].id,
-            position,
-            attributedContributorId,
-          });
-        }
-
-        if (sessionTrackRows.length > 0) {
-          await db.insert(schema.sessionTracks).values(sessionTrackRows);
-        }
-
-        // ── Last.fm enrichment phase ────────────────────────────────────────
         const uniqueArtists = Array.from(
           new Set(trackRows.map((t) => t.artistName)),
         );
+
+        // ── Last.fm enrichment phase ────────────────────────────────────────
+        // Runs BEFORE the DB transaction — never hold a transaction open across
+        // network I/O (C3).
         const artistTagRows: (typeof schema.artistTags.$inferInsert)[] = [];
 
         for (let i = 0; i < uniqueArtists.length; i++) {
@@ -347,15 +273,102 @@ export async function POST(request: Request) {
           await new Promise((r) => setTimeout(r, 250));
         }
 
-        if (artistTagRows.length > 0) {
-          await db.insert(schema.artistTags).values(artistTagRows);
-        }
+        // ── DB write phase ─────────────────────────────────────────────────
+        // All writes happen in a single transaction (C3): a mid-import failure
+        // rolls back instead of leaving the archive deleted with a partial
+        // (or no) replacement.
+        let insertedSessionsCount = 0;
+        let insertedTracksCount = 0;
+
+        await db.transaction(async (tx) => {
+          // Replace-all (D-04): delete child tables first, then parents
+          await tx.delete(schema.artistTags);
+          await tx.delete(schema.sessionTracks);
+          await tx.delete(schema.tracks);
+          await tx.delete(schema.sessions);
+
+          // Upsert the four canonical contributors (never deleted)
+          const contributorRows = Object.entries(KNOWN_CONTRIBUTORS).map(
+            ([initials, name]) => ({ initials, name }),
+          );
+          await tx
+            .insert(schema.contributors)
+            .values(contributorRows)
+            .onConflictDoNothing();
+
+          const insertedContribs = await tx.select().from(schema.contributors);
+          const contribIdByInitials = new Map(
+            insertedContribs.map((c) => [c.initials, c.id]),
+          );
+
+          // Insert sessions
+          const sessionRows = plan.sessionPlans.map((sp) => ({
+            sessionNumber: sp.sessionNumber,
+            theme: sp.theme,
+            description: sp.description,
+            appleMusicPlaylistId: sp.appleMusicPlaylistId,
+            attributionParsed: sp.attributionParsed,
+          }));
+
+          let insertedSessions: { id: number }[] = [];
+          if (sessionRows.length > 0) {
+            insertedSessions = await tx
+              .insert(schema.sessions)
+              .values(sessionRows)
+              .returning({ id: schema.sessions.id });
+          }
+
+          let insertedTracks: { id: number }[] = [];
+          if (trackRows.length > 0) {
+            insertedTracks = await tx
+              .insert(schema.tracks)
+              .values(trackRows)
+              .returning({ id: schema.tracks.id });
+          }
+
+          // Build session_tracks join rows
+          const sessionTrackRows: (typeof schema.sessionTracks.$inferInsert)[] =
+            [];
+          for (let flatIdx = 0; flatIdx < insertedTracks.length; flatIdx++) {
+            const { planSessionIndex, position } = trackMeta[flatIdx];
+            const sessionPlan = plan.sessionPlans[planSessionIndex];
+            const sessionId = insertedSessions[planSessionIndex]?.id;
+
+            if (sessionId === undefined) continue;
+
+            let attributedContributorId: number | null = null;
+            if (sessionPlan.attributionParsed && sessionPlan.initials) {
+              const slot = (position - 1) % sessionPlan.initials.length;
+              const contribInitials = sessionPlan.initials[slot];
+              attributedContributorId =
+                contribIdByInitials.get(contribInitials) ?? null;
+            }
+
+            sessionTrackRows.push({
+              sessionId,
+              trackId: insertedTracks[flatIdx].id,
+              position,
+              attributedContributorId,
+            });
+          }
+
+          if (sessionTrackRows.length > 0) {
+            await tx.insert(schema.sessionTracks).values(sessionTrackRows);
+          }
+
+          if (artistTagRows.length > 0) {
+            await tx.insert(schema.artistTags).values(artistTagRows);
+          }
+
+          insertedSessionsCount = insertedSessions.length;
+          insertedTracksCount = insertedTracks.length;
+        });
 
         // Final completion event
         send({
           type: "complete",
-          sessions: insertedSessions.length,
-          tracks: insertedTracks.length,
+          sessions: insertedSessionsCount,
+          tracks: insertedTracksCount,
           errors: plan.fetchErrors,
         });
       } catch (err) {
