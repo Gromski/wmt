@@ -82,4 +82,20 @@ blocked: 0
   severity: major
   test: 4
   artifacts: [lib/parse-playlist.ts, app/api/import/route.ts]
-  missing: [youtube-fallback-track-format-spec, youtube-metadata-fetch, multi-youtube-per-session-support]
+  missing: [youtube-fallback-track-parser, multi-youtube-per-session-support, fallback-track-insertion]
+  resolution: |
+    User decision (2026-08-10) — locks the fix scope; NO YouTube metadata fetch required:
+    - Canonical description format for fallback tracks: "<Name>'s <descriptor> track: <Artist> - <Title> <url>"
+      e.g. "Iwan's love track: Prince - Open Book https://youtu.be/...". Descriptor is free text; use an
+      ordinal ("Iwan's second track: ...") to disambiguate. User will edit the playlist descriptions to
+      this format (incl. adding a url to the S24 "Iron Man by Rahzel" case) BEFORE re-import.
+    - Multiple fallback tracks per session supported (S3 has two, separated by " / ").
+    - Name → contributor initials: Mark→MW, Jack→JG, Jon/Jonny→JS, Iwan→IT.
+    - Parser: add a fallback-track extractor returning [{ initials, artist, title, youtubeUrl }] (all
+      fields from the description text — no external fetch). Keep the existing initials/theme/attribution
+      logic intact.
+    - Import route: remove the old "attach first url to position 1 / first no-appleId track" heuristic.
+      Insert each fallback track as its OWN track (appleId null, youtubeUrl set), attributed to the named
+      contributor, appended in that contributor's play-order group (planner to confirm exact position vs
+      the detail page's grouping).
+    - Requires a human step (user updates descriptions) then a re-import checkpoint.
