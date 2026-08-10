@@ -25,6 +25,7 @@ export default async function SessionsPage() {
       position: schema.sessionTracks.position,
       initials: schema.contributors.initials,
       name: schema.contributors.name,
+      artistName: schema.tracks.artistName,
     })
     .from(schema.sessionTracks)
     .innerJoin(
@@ -34,23 +35,34 @@ export default async function SessionsPage() {
     .leftJoin(
       schema.contributors,
       eq(schema.sessionTracks.attributedContributorId, schema.contributors.id),
+    )
+    .leftJoin(
+      schema.tracks,
+      eq(schema.tracks.id, schema.sessionTracks.trackId),
     );
 
   const contributorsBySession = new Map<
     number,
     { initials: string; name: string; position: number }[]
   >();
+  const artistsBySession = new Map<number, Set<string>>();
   for (const row of contributorRows) {
-    if (!row.initials || !row.name) continue;
-    const existing = contributorsBySession.get(row.sessionNumber) ?? [];
-    if (!existing.some((c) => c.initials === row.initials)) {
-      existing.push({
-        initials: row.initials,
-        name: row.name,
-        position: row.position,
-      });
+    if (row.initials && row.name) {
+      const existing = contributorsBySession.get(row.sessionNumber) ?? [];
+      if (!existing.some((c) => c.initials === row.initials)) {
+        existing.push({
+          initials: row.initials,
+          name: row.name,
+          position: row.position,
+        });
+      }
+      contributorsBySession.set(row.sessionNumber, existing);
     }
-    contributorsBySession.set(row.sessionNumber, existing);
+    if (row.artistName) {
+      const existing = artistsBySession.get(row.sessionNumber) ?? new Set();
+      existing.add(row.artistName);
+      artistsBySession.set(row.sessionNumber, existing);
+    }
   }
 
   const sessions: SessionCardPayload[] = sessionRows.map((r) => ({
@@ -60,6 +72,7 @@ export default async function SessionsPage() {
     contributors: (contributorsBySession.get(r.sessionNumber) ?? [])
       .sort((a, b) => a.position - b.position)
       .map((c) => ({ initials: c.initials, name: c.name })),
+    artistNames: Array.from(artistsBySession.get(r.sessionNumber) ?? []),
   }));
 
   return (

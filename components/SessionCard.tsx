@@ -13,6 +13,7 @@ export interface SessionCardPayload {
   theme: string;
   date: number | null;
   contributors: SessionCardContributor[];
+  artistNames: string[];
 }
 
 export function SessionCard({ session }: { session: SessionCardPayload }) {
