@@ -95,7 +95,7 @@ Plans:
   4. User can view a chronological timeline of all sessions
   5. User can search or filter sessions by theme keyword, person name, or artist name
 
-**Plans:** 3/3 initial plans complete; 2 gap-closure plans added (03-04, 03-05) to fix UAT test-4 fallback-track defect
+**Plans:** 4/5 plans executed
 Plans:
 **Wave 1**
 
@@ -113,7 +113,7 @@ Plans:
 
 **Wave 1 (gap)**
 
-- [ ] 03-04-PLAN.md — Parser + import route fix: add `parseFallbackTracks` (multiple `{initials, artist, title, youtubeUrl}` per description, Name→initials incl. Jonny→JS, no external fetch) + tests; remove the crude "attach single url to position 1 / first no-appleId track" heuristic; insert each fallback track as its OWN row attributed to the named contributor, appended at session end — BROWSE-03
+- [x] 03-04-PLAN.md — Parser + import route fix: add `parseFallbackTracks` (multiple `{initials, artist, title, youtubeUrl}` per description, Name→initials incl. Jonny→JS, no external fetch) + tests; remove the crude "attach single url to position 1 / first no-appleId track" heuristic; insert each fallback track as its OWN row attributed to the named contributor, appended at session end — BROWSE-03
 
 **Wave 2 (gap)** *(blocked on 03-04)*
 
@@ -146,5 +146,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
-| 3. Archive Browsing | 3/3 | Complete   | 2026-08-10 |
+| 3. Archive Browsing | 4/5 | In Progress|  |
 | 4. Analytics | 0/TBD | Not started | - |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Phase 03 complete (3/3) — ready to discuss Phase 4
-last_updated: 2026-08-10T10:25:06.121Z
+status: executing
+stopped_at: Phase 3 Plan 01 complete — data layer + import fixes; re-import verified (32 sessions, 467 tracks)
+last_updated: "2026-08-10T12:31:08.479Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
-  percent: 75
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 11
+  percent: 50
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** Interrogate 31 sessions of curated music to surface who each person really is as a music-chooser — and how the group compares
-**Current focus:** Phase 4 — analytics
+**Current focus:** Phase 03 — archive-browsing
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
-Status: Ready to plan
+Phase: 03 (archive-browsing) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
 Last activity: 2026-08-10
 
-Progress: [██████████] 100%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [██████████] 100%
 | Phase 03 P01 | 35min | 3 tasks | 4 files |
 | Phase 03-archive-browsing P02 | 55min | 3 tasks | 9 files |
 | Phase 03-archive-browsing P03 | 35min | 2 tasks | 4 files |
+| Phase 03 P04 | 25min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,9 @@ Recent decisions affecting current work:
 - [Phase 03-02]: Contributor colour CSS vars added inside .dark block only (no light-mode tokens exist to duplicate into)
 - [Phase ?]: artistNames added to SessionCardPayload; ArchiveClient search filters theme/contributor-name/artist client-side (D-14), no API route
 - [Phase ?]: ?view= narrowed to grid|table|timeline union with fallback to grid for any invalid value (mitigates T-03-09)
+- [Phase 03]: Fallback tracks appended at session end (not inlined at conversational position) — session detail page renders a flat position-ordered list with per-track contributor chips
+- [Phase 03]: attributionInitials threaded through ImportPlan/trackMeta as nullable override — null preserves round-robin verbatim, non-null bypasses it via direct contribIdByInitials lookup
+- [Phase 03]: Jon and Jonny both map to JS per 03-UAT.md resolution; Jonny listed before Jon in FALLBACK_TRACK_RE alternation so the longer name wins
 
 ### Pending Todos
 
@@ -119,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-10T09:55:32.202Z
+Last session: 2026-08-10T12:29:38.753Z
 Stopped at: Phase 3 Plan 01 complete — data layer + import fixes; re-import verified (32 sessions, 467 tracks)
 Resume file: None
