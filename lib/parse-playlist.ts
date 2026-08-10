@@ -10,6 +10,70 @@ export const KNOWN_CONTRIBUTORS: Record<string, string> = {
 };
 
 /**
+ * Name → initials mapping for fallback-track attribution (BROWSE-03, D resolution in
+ * 03-UAT.md). Both "Jon" and "Jonny" resolve to JS per the authoritative user resolution.
+ */
+export const NAME_TO_INITIALS: Record<string, string> = {
+  Mark: "MW",
+  Jack: "JG",
+  Jon: "JS",
+  Jonny: "JS",
+  Iwan: "IT",
+};
+
+/**
+ * Matches the canonical fallback-track sentence: "<Name>'s <descriptor> track: <Artist> -
+ * <Title> <url>" (BROWSE-03). Name alternation is limited to the five known first names,
+ * with "Jonny" listed before "Jon" so the longer name wins. Tolerates both a straight and
+ * curly apostrophe. Descriptor is free text up to (but not crossing) the literal "track:".
+ * Artist is non-greedy up to the first " - "; title is non-greedy up to the URL token.
+ * Global + case-insensitive — consume ONLY via description.matchAll(FALLBACK_TRACK_RE)
+ * (never .test()/.exec() on a /g regex — same lastIndex-state discipline as ABSENCE_RE).
+ */
+export const FALLBACK_TRACK_RE =
+  /(Mark|Jack|Jonny|Jon|Iwan)['’]s\s+[^:]+?track:\s*(.+?)\s+-\s+(.+?)\s+(https?:\/\/\S+)/gi;
+
+/**
+ * Extracts fallback (YouTube-only) tracks embedded in a playlist description, per the
+ * canonical format documented at FALLBACK_TRACK_RE. Returns an ordered list — multiple
+ * entries separated by " / " in the source text are all captured. Entries whose captured
+ * name does not resolve to a known contributor are skipped. Does NOT mutate or depend on
+ * parsePlaylistDescription's behavior.
+ */
+export function parseFallbackTracks(description: string | undefined): Array<{
+  initials: string;
+  artist: string;
+  title: string;
+  youtubeUrl: string;
+}> {
+  if (!description) return [];
+
+  const results: Array<{
+    initials: string;
+    artist: string;
+    title: string;
+    youtubeUrl: string;
+  }> = [];
+
+  for (const match of description.matchAll(FALLBACK_TRACK_RE)) {
+    const rawName = match[1].trim();
+    const normalizedName =
+      rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+    const initials = NAME_TO_INITIALS[normalizedName];
+    if (!initials) continue; // unresolvable name — skip (T-03-04-01)
+
+    results.push({
+      initials,
+      artist: match[2].trim(),
+      title: match[3].trim(),
+      youtubeUrl: match[4].trim(),
+    });
+  }
+
+  return results;
+}
+
+/**
  * Matches four comma-separated initials blocks restricted to the four known contributors
  * (MW, JG, JS, IT). Word-boundary anchors tolerate noise before/after the initials string.
  * e.g. "Curated by MW, JG, JS, IT" or "MW, JG, JS, IT — some other text"
