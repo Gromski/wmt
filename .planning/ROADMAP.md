@@ -95,7 +95,7 @@ Plans:
   4. User can view a chronological timeline of all sessions
   5. User can search or filter sessions by theme keyword, person name, or artist name
 
-**Plans:** 3/3 plans complete
+**Plans:** 3/3 initial plans complete; 2 gap-closure plans added (03-04, 03-05) to fix UAT test-4 fallback-track defect
 Plans:
 **Wave 1**
 
@@ -108,6 +108,16 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 03-03-PLAN.md — Interactive slice: extend ArchiveClient with grid/table/timeline view toggle (URL `?view=` persistence) and client-side search across theme/person/artist; SessionTimeline component — BROWSE-04, BROWSE-05
+
+**Gap closure (UAT test 4 — BROWSE-03)**
+
+**Wave 1 (gap)**
+
+- [ ] 03-04-PLAN.md — Parser + import route fix: add `parseFallbackTracks` (multiple `{initials, artist, title, youtubeUrl}` per description, Name→initials incl. Jonny→JS, no external fetch) + tests; remove the crude "attach single url to position 1 / first no-appleId track" heuristic; insert each fallback track as its OWN row attributed to the named contributor, appended at session end — BROWSE-03
+
+**Wave 2 (gap)** *(blocked on 03-04)*
+
+- [ ] 03-05-PLAN.md — Human checkpoint: admin edits Apple Music descriptions to canonical "<Name>'s <descriptor> track: <Artist> - <Title> <url>" format (incl. adding a url to the S24 Iron Man/Rahzel case), re-imports via MusicKit, then spot-checks S3 (2 fallback tracks), S31 (Jonny's diamond track under JS), and that no fallback link is on the wrong track — BROWSE-03
 
 **UI hint**: yes
 
