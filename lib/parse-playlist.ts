@@ -34,17 +34,49 @@ export const FALLBACK_TRACK_RE =
   /(Mark|Jack|Jonny|Jon|Iwan)['’]s\s+[^:]+?track:\s*(.+?)\s+-\s+(.+?)\s+(https?:\/\/\S+)/gi;
 
 /**
+ * Extracts a round number (1-4) from a fallback track's descriptor text (the free text
+ * between the possessive and "track:", already captured by FALLBACK_TRACK_RE). Recognises
+ * whole-word ordinals, case-insensitively: first/1st→1, second/2nd→2, third/3rd→3,
+ * fourth/4th/last→4 (every contributor picks 4 tracks per session, so "last" = round 4).
+ * Any other descriptor (a theme word like "love", or an explicit "bonus") → null, meaning
+ * a bonus track with no declared grid slot (BROWSE-03 position-aware fallback design).
+ */
+function ordinalToRound(descriptor: string): number | null {
+  const normalized = descriptor.trim().toLowerCase();
+  if (/\b(first|1st)\b/.test(normalized)) return 1;
+  if (/\b(second|2nd)\b/.test(normalized)) return 2;
+  if (/\b(third|3rd)\b/.test(normalized)) return 3;
+  if (/\b(fourth|4th|last)\b/.test(normalized)) return 4;
+  return null;
+}
+
+/**
+ * Re-extracts the descriptor text (free text between the possessive and "track:") from a
+ * single fallback match's full matched text (match[0]). FALLBACK_TRACK_RE itself does not
+ * capture this text in its own group — kept byte-identical per plan constraint — so this
+ * mirrors its `['’]s\s+[^:]+?track:` shape locally, non-globally, on the already-isolated
+ * match substring (safe to use .match() here since it is not a /g regex).
+ */
+function descriptorFromMatch(fullMatch: string): string {
+  const m = fullMatch.match(/['’]s\s+([^:]+?)track:/i);
+  return m ? m[1] : "";
+}
+
+/**
  * Extracts fallback (YouTube-only) tracks embedded in a playlist description, per the
  * canonical format documented at FALLBACK_TRACK_RE. Returns an ordered list — multiple
  * entries separated by " / " in the source text are all captured. Entries whose captured
- * name does not resolve to a known contributor are skipped. Does NOT mutate or depend on
- * parsePlaylistDescription's behavior.
+ * name does not resolve to a known contributor are skipped. Each entry carries a `round`
+ * derived from its descriptor's ordinal (BROWSE-03 position-aware fallback design) — null
+ * when the descriptor is a theme word or explicit "bonus" (no declared grid slot). Does
+ * NOT mutate or depend on parsePlaylistDescription's behavior.
  */
 export function parseFallbackTracks(description: string | undefined): Array<{
   initials: string;
   artist: string;
   title: string;
   youtubeUrl: string;
+  round: number | null;
 }> {
   if (!description) return [];
 
@@ -53,6 +85,7 @@ export function parseFallbackTracks(description: string | undefined): Array<{
     artist: string;
     title: string;
     youtubeUrl: string;
+    round: number | null;
   }> = [];
 
   for (const match of description.matchAll(FALLBACK_TRACK_RE)) {
@@ -67,6 +100,7 @@ export function parseFallbackTracks(description: string | undefined): Array<{
       artist: match[2].trim(),
       title: match[3].trim(),
       youtubeUrl: match[4].trim(),
+      round: ordinalToRound(descriptorFromMatch(match[0])),
     });
   }
 

@@ -170,6 +170,7 @@ function run() {
   }
 
   // parseFallbackTracks — S3: two fallback tracks separated by " / "
+  // "love" / "angry" are theme words, not ordinals → round: null
   {
     const result = parseFallbackTracks(
       "Iwan's love track: Prince - Open Book https://youtu.be/aaaaaaaaaaa / Jonny's angry track: Rage Against the Machine - Killing in the Name https://youtu.be/bbbbbbbbbbb",
@@ -180,17 +181,20 @@ function run() {
         artist: "Prince",
         title: "Open Book",
         youtubeUrl: "https://youtu.be/aaaaaaaaaaa",
+        round: null,
       },
       {
         initials: "JS",
         artist: "Rage Against the Machine",
         title: "Killing in the Name",
         youtubeUrl: "https://youtu.be/bbbbbbbbbbb",
+        round: null,
       },
     ]);
   }
 
   // parseFallbackTracks — S31: Jonny → JS (longer name must win over "Jon")
+  // "diamond" is a theme word, not an ordinal → round: null
   {
     const result = parseFallbackTracks(
       "Jonny's diamond track: DND - Diamond Rings https://www.youtube.com/watch?v=dVXvm5HpCi8",
@@ -201,11 +205,13 @@ function run() {
         artist: "DND",
         title: "Diamond Rings",
         youtubeUrl: "https://www.youtube.com/watch?v=dVXvm5HpCi8",
+        round: null,
       },
     ]);
   }
 
   // parseFallbackTracks — nickname/name mapping: Jon, Mark, Jack, Iwan
+  // ("chill", "hype", "sad", "calm" are theme words, not ordinals → round: null)
   {
     const result = parseFallbackTracks(
       "Jon's chill track: Boards of Canada - Roygbiv https://youtu.be/ccccccccccc",
@@ -216,6 +222,7 @@ function run() {
         artist: "Boards of Canada",
         title: "Roygbiv",
         youtubeUrl: "https://youtu.be/ccccccccccc",
+        round: null,
       },
     ]);
   }
@@ -229,6 +236,7 @@ function run() {
         artist: "Daft Punk",
         title: "One More Time",
         youtubeUrl: "https://youtu.be/ddddddddddd",
+        round: null,
       },
     ]);
   }
@@ -242,6 +250,7 @@ function run() {
         artist: "Bon Iver",
         title: "Skinny Love",
         youtubeUrl: "https://youtu.be/eeeeeeeeeee",
+        round: null,
       },
     ]);
   }
@@ -255,11 +264,12 @@ function run() {
         artist: "Boards of Canada",
         title: "Aquarius",
         youtubeUrl: "https://youtu.be/fffffffffff",
+        round: null,
       },
     ]);
   }
 
-  // parseFallbackTracks — ordinal descriptor is free text
+  // parseFallbackTracks — ordinal descriptor is free text ("second" → round: 2)
   {
     const result = parseFallbackTracks(
       "Iwan's second track: Foo - Bar https://youtu.be/ccccccccccc",
@@ -270,6 +280,7 @@ function run() {
         artist: "Foo",
         title: "Bar",
         youtubeUrl: "https://youtu.be/ccccccccccc",
+        round: 2,
       },
     ]);
   }
@@ -279,6 +290,66 @@ function run() {
 
   // parseFallbackTracks — undefined description → []
   assert.deepEqual(parseFallbackTracks(undefined), []);
+
+  // parseFallbackTracks — ordinal extraction: round derivation from the descriptor
+  // Word forms
+  {
+    const result = parseFallbackTracks(
+      "Iwan's first track: A - B https://youtu.be/x",
+    );
+    assert.equal(result[0].round, 1);
+  }
+  {
+    const result = parseFallbackTracks(
+      "Jack's third track: A - B https://youtu.be/x",
+    );
+    assert.equal(result[0].round, 3);
+  }
+  {
+    const result = parseFallbackTracks(
+      "Jonny's last track: A - B https://youtu.be/x",
+    );
+    assert.equal(result[0].round, 4);
+  }
+  // Numeric forms
+  {
+    const result = parseFallbackTracks(
+      "Iwan's 2nd track: A - B https://youtu.be/x",
+    );
+    assert.equal(result[0].round, 2);
+  }
+  {
+    const result = parseFallbackTracks(
+      "Mark's 1st track: A - B https://youtu.be/x",
+    );
+    assert.equal(result[0].round, 1);
+  }
+  {
+    const result = parseFallbackTracks(
+      "Jack's 3rd track: A - B https://youtu.be/x",
+    );
+    assert.equal(result[0].round, 3);
+  }
+  {
+    const result = parseFallbackTracks(
+      "Jonny's 4th track: A - B https://youtu.be/x",
+    );
+    assert.equal(result[0].round, 4);
+  }
+  // No ordinal → bonus (round: null)
+  {
+    const result = parseFallbackTracks(
+      "Jonny's bonus track: A - B https://youtu.be/x",
+    );
+    assert.equal(result[0].round, null);
+  }
+  // Theme word, not an ordinal → round: null
+  {
+    const result = parseFallbackTracks(
+      "Iwan's love track: A - B https://youtu.be/x",
+    );
+    assert.equal(result[0].round, null);
+  }
 
   console.log("parse-playlist.test.ts: all assertions passed");
 }
