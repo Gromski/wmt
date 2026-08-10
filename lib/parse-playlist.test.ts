@@ -11,6 +11,7 @@
 import assert from "node:assert/strict";
 
 import {
+  parseFallbackTracks,
   parsePlaylistDescription,
   SESSION_PLAYLIST_RE,
   YOUTUBE_RE,
@@ -167,6 +168,117 @@ function run() {
     const result = parsePlaylistDescription("x", "AB, CD, EF, GH");
     assert.equal(result.initials, null);
   }
+
+  // parseFallbackTracks — S3: two fallback tracks separated by " / "
+  {
+    const result = parseFallbackTracks(
+      "Iwan's love track: Prince - Open Book https://youtu.be/aaaaaaaaaaa / Jonny's angry track: Rage Against the Machine - Killing in the Name https://youtu.be/bbbbbbbbbbb",
+    );
+    assert.deepEqual(result, [
+      {
+        initials: "IT",
+        artist: "Prince",
+        title: "Open Book",
+        youtubeUrl: "https://youtu.be/aaaaaaaaaaa",
+      },
+      {
+        initials: "JS",
+        artist: "Rage Against the Machine",
+        title: "Killing in the Name",
+        youtubeUrl: "https://youtu.be/bbbbbbbbbbb",
+      },
+    ]);
+  }
+
+  // parseFallbackTracks — S31: Jonny → JS (longer name must win over "Jon")
+  {
+    const result = parseFallbackTracks(
+      "Jonny's diamond track: DND - Diamond Rings https://www.youtube.com/watch?v=dVXvm5HpCi8",
+    );
+    assert.deepEqual(result, [
+      {
+        initials: "JS",
+        artist: "DND",
+        title: "Diamond Rings",
+        youtubeUrl: "https://www.youtube.com/watch?v=dVXvm5HpCi8",
+      },
+    ]);
+  }
+
+  // parseFallbackTracks — nickname/name mapping: Jon, Mark, Jack, Iwan
+  {
+    const result = parseFallbackTracks(
+      "Jon's chill track: Boards of Canada - Roygbiv https://youtu.be/ccccccccccc",
+    );
+    assert.deepEqual(result, [
+      {
+        initials: "JS",
+        artist: "Boards of Canada",
+        title: "Roygbiv",
+        youtubeUrl: "https://youtu.be/ccccccccccc",
+      },
+    ]);
+  }
+  {
+    const result = parseFallbackTracks(
+      "Mark's hype track: Daft Punk - One More Time https://youtu.be/ddddddddddd",
+    );
+    assert.deepEqual(result, [
+      {
+        initials: "MW",
+        artist: "Daft Punk",
+        title: "One More Time",
+        youtubeUrl: "https://youtu.be/ddddddddddd",
+      },
+    ]);
+  }
+  {
+    const result = parseFallbackTracks(
+      "Jack's sad track: Bon Iver - Skinny Love https://youtu.be/eeeeeeeeeee",
+    );
+    assert.deepEqual(result, [
+      {
+        initials: "JG",
+        artist: "Bon Iver",
+        title: "Skinny Love",
+        youtubeUrl: "https://youtu.be/eeeeeeeeeee",
+      },
+    ]);
+  }
+  {
+    const result = parseFallbackTracks(
+      "Iwan's calm track: Boards of Canada - Aquarius https://youtu.be/fffffffffff",
+    );
+    assert.deepEqual(result, [
+      {
+        initials: "IT",
+        artist: "Boards of Canada",
+        title: "Aquarius",
+        youtubeUrl: "https://youtu.be/fffffffffff",
+      },
+    ]);
+  }
+
+  // parseFallbackTracks — ordinal descriptor is free text
+  {
+    const result = parseFallbackTracks(
+      "Iwan's second track: Foo - Bar https://youtu.be/ccccccccccc",
+    );
+    assert.deepEqual(result, [
+      {
+        initials: "IT",
+        artist: "Foo",
+        title: "Bar",
+        youtubeUrl: "https://youtu.be/ccccccccccc",
+      },
+    ]);
+  }
+
+  // parseFallbackTracks — no fallback tracks (plain initials list) → []
+  assert.deepEqual(parseFallbackTracks("MW, JG, JS, IT"), []);
+
+  // parseFallbackTracks — undefined description → []
+  assert.deepEqual(parseFallbackTracks(undefined), []);
 
   console.log("parse-playlist.test.ts: all assertions passed");
 }
