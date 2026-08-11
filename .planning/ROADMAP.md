@@ -114,10 +114,11 @@ Plans:
 **Wave 1 (gap)**
 
 - [x] 03-04-PLAN.md — Parser + import route fix: add `parseFallbackTracks` (multiple `{initials, artist, title, youtubeUrl}` per description, Name→initials incl. Jonny→JS, no external fetch) + tests; remove the crude "attach single url to position 1 / first no-appleId track" heuristic; insert each fallback track as its OWN row attributed to the named contributor, appended at session end — BROWSE-03
+- [x] 03-06-PLAN.md — Position-aware fallbacks: add ordinal→`round` to `parseFallbackTracks`; pure `buildSessionTrackPositions` helper reconstructs the session grid (grid fallbacks at their true round-robin slot, Apple tracks fill the gaps, bonus/demoted fallbacks appended); grid tracks attribute by position (fixes the missing-pick attribution shift) + tests — BROWSE-03
 
-**Wave 2 (gap)** *(blocked on 03-04)*
+**Wave 3 (gap)** *(blocked on 03-06)*
 
-- [ ] 03-05-PLAN.md — Human checkpoint: admin edits Apple Music descriptions to canonical "<Name>'s <descriptor> track: <Artist> - <Title> <url>" format (incl. adding a url to the S24 Iron Man/Rahzel case), re-imports via MusicKit, then spot-checks S3 (2 fallback tracks), S31 (Jonny's diamond track under JS), and that no fallback link is on the wrong track — BROWSE-03
+- [x] 03-05-PLAN.md — Human checkpoint: admin edits Apple Music descriptions to the ordinal/bonus convention (incl. the S24 Rahzel - Iron Man fix + url), re-imports via MusicKit, then verified against the live DB — S3 fallbacks at positions 1 & 8 with Apple tracks re-attributed, S9/S15/S24/S31 correct; S19 open pending Iwan — BROWSE-03 (completed 2026-08-11)
 
 **UI hint**: yes
 
