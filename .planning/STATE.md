@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 Plan 01 complete — data layer + import fixes; re-import verified (32 sessions, 467 tracks)
-last_updated: "2026-08-10T12:31:08.479Z"
-last_activity: 2026-08-10
+stopped_at: Completed 03-06-PLAN.md
+last_updated: "2026-08-11T16:00:45.096Z"
+last_activity: 2026-08-11
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 12
-  completed_plans: 11
+  total_plans: 13
+  completed_plans: 12
   percent: 50
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 ## Current Position
 
 Phase: 03 (archive-browsing) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
-Last activity: 2026-08-10
+Last activity: 2026-08-11
 
 Progress: [█████████░] 92%
 
@@ -64,6 +64,7 @@ Progress: [█████████░] 92%
 | Phase 03-archive-browsing P02 | 55min | 3 tasks | 9 files |
 | Phase 03-archive-browsing P03 | 35min | 2 tasks | 4 files |
 | Phase 03 P04 | 25min | 2 tasks | 3 files |
+| Phase 03 P06 | 45min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,8 @@ Recent decisions affecting current work:
 - [Phase 03]: Fallback tracks appended at session end (not inlined at conversational position) — session detail page renders a flat position-ordered list with per-track contributor chips
 - [Phase 03]: attributionInitials threaded through ImportPlan/trackMeta as nullable override — null preserves round-robin verbatim, non-null bypasses it via direct contribIdByInitials lookup
 - [Phase 03]: Jon and Jonny both map to JS per 03-UAT.md resolution; Jonny listed before Jon in FALLBACK_TRACK_RE alternation so the longer name wins
+- [Phase ?]: Fallback ordinal descriptor text re-derived from match[0] (not a new FALLBACK_TRACK_RE capture group) to keep the regex byte-identical
+- [Phase ?]: buildSessionTrackPositions is pure and exported from app/api/import/route.ts; grid fallbacks attribute by position (null attributionInitials), only bonus/demoted fallbacks keep explicit attribution
 
 ### Pending Todos
 
@@ -123,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-10T12:29:38.753Z
-Stopped at: Phase 3 Plan 01 complete — data layer + import fixes; re-import verified (32 sessions, 467 tracks)
+Last session: 2026-08-11T16:00:45.092Z
+Stopped at: Completed 03-06-PLAN.md
 Resume file: None

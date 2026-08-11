@@ -95,7 +95,7 @@ Plans:
   4. User can view a chronological timeline of all sessions
   5. User can search or filter sessions by theme keyword, person name, or artist name
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/6 plans executed
 Plans:
 **Wave 1**
 
@@ -146,5 +146,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
-| 3. Archive Browsing | 4/5 | In Progress|  |
+| 3. Archive Browsing | 5/6 | In Progress|  |
 | 4. Analytics | 0/TBD | Not started | - |
