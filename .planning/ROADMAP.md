@@ -135,7 +135,20 @@ Plans:
   3. The friend who most consistently diverges from the group's average choices is identified and surfaced
   4. Each friend has a Wrapped-style summary card with headline stats and standout picks
 
-**Plans**: TBD
+**Plans:** 3 plans (MVP vertical slices — the /analytics hub grows one viewable capability per wave)
+Plans:
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Taste-profile slice: install shadcn chart (recharts), `lib/genre-whitelist.ts` (curated GENRE_MAP), `lib/analytics.ts` single-pass aggregation (AnalyticsData contract), radar + era-bar + top-artists-bar client charts, public `/analytics` RSC hub, "Analytics" header nav link — ANALYTICS-01
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 04-02-PLAN.md — Group-overview slice: `lib/similarity.ts` (cosine blend + centroid divergence, exported tuning constants) + tests, 4×4 CSS-grid `OverlapHeatmap`, `WildcardRanking`, group-overview section at the top of the hub — ANALYTICS-02, ANALYTICS-03
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 04-03-PLAN.md — Wrapped-cards slice: `lib/wrapped.ts` (signature genre + #1 artist, group-unique pick, era range, edge-case-correct headline counts) + tests, bold per-contributor `WrappedCard`, inline Wrapped section — ANALYTICS-04
+
 **UI hint**: yes
 
 ## Progress
@@ -148,4 +161,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
 | 3. Archive Browsing | 6/6 | Complete | 2026-08-11 |
-| 4. Analytics | 0/TBD | Not started | - |
+| 4. Analytics | 0/3 | Not started | - |
