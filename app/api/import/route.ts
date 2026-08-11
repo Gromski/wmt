@@ -279,44 +279,71 @@ export async function POST(request: Request) {
             p.attributes?.description?.standard,
           );
 
-          // Build track records for positions 1..N (up to 16 tracks per playlist).
-          // Apple Music tracks no longer carry a youtubeUrl — the old "first track
-          // without an appleId, else position 1" heuristic mis-attributed fallback
-          // links (BROWSE-03 / UAT test 4). YouTube fallback tracks are now parsed
-          // as their OWN entries below and appended at session end.
-          const appleTracks: ImportPlan["sessionPlans"][0]["tracks"] = items
-            .slice(0, 16)
-            .map((item, idx) => {
-              const catalogItem = item.relationships?.catalog?.data?.[0];
-              const releaseDate = catalogItem?.attributes?.releaseDate;
-              const releaseYear = releaseDate
-                ? Number(releaseDate.slice(0, 4)) || null
-                : null;
+          // Build track records for the Apple Music tracks (up to 16 per playlist).
+          // Positions are assigned below via buildSessionTrackPositions — NOT idx+1 —
+          // because a YouTube fallback pick missing from this playlist collapses the
+          // round-robin sequence for every Apple track after the gap (BROWSE-03 gap
+          // closure, position-aware fallback design). Apple Music tracks never carry a
+          // youtubeUrl; fallback tracks are parsed as their own entries below.
+          const rawAppleTracks = items.slice(0, 16).map((item) => {
+            const catalogItem = item.relationships?.catalog?.data?.[0];
+            const releaseDate = catalogItem?.attributes?.releaseDate;
+            const releaseYear = releaseDate
+              ? Number(releaseDate.slice(0, 4)) || null
+              : null;
 
-              return {
-                position: idx + 1,
-                title: item.attributes.name,
-                artistName: item.attributes.artistName,
-                albumName: item.attributes.albumName ?? null,
-                durationMs: item.attributes.durationInMillis ?? null,
-                appleId: catalogItem?.id ?? null,
-                isrc: catalogItem?.attributes?.isrc ?? null,
-                releaseYear,
-                youtubeUrl: null,
-                attributionInitials: null,
-              };
-            });
+            return {
+              title: item.attributes.name,
+              artistName: item.attributes.artistName,
+              albumName: item.attributes.albumName ?? null,
+              durationMs: item.attributes.durationInMillis ?? null,
+              appleId: catalogItem?.id ?? null,
+              isrc: catalogItem?.attributes?.isrc ?? null,
+              releaseYear,
+              youtubeUrl: null as string | null,
+              attributionInitials: null as string | null,
+            };
+          });
 
           // Fallback tracks (YouTube-only, no Apple catalog match) are parsed entirely
-          // from the description text and appended AFTER all Apple Music tracks. The
-          // session detail page renders a flat list ordered by session_tracks.position
-          // with a per-track contributor chip (no per-contributor section headers), so
-          // appending at session end keeps Apple round-robin positions stable while the
-          // explicit attribution below still shows the correct contributor chip.
+          // from the description text. Each carries a `round` (BROWSE-03 position-aware
+          // fallback design) that buildSessionTrackPositions below uses to place it at
+          // its true round-robin slot (grid) or append it after the grid (bonus).
+          const parsedFallbacks = parseFallbackTracks(
+            p.attributes?.description?.standard,
+          );
+
+          const positions = buildSessionTrackPositions({
+            appleCount: rawAppleTracks.length,
+            fallbacks: parsedFallbacks.map((f) => ({
+              initials: f.initials,
+              round: f.round,
+            })),
+            initials: parsed.initials,
+          });
+
+          for (const demotion of positions.demotions) {
+            const fallback = parsedFallbacks[demotion.index];
+            console.log(
+              `[import] demoted grid fallback to bonus for "${name}" (${fallback?.initials ?? "?"} - ${fallback?.title ?? "?"}): ${demotion.reason}`,
+            );
+          }
+
+          const appleTracks: ImportPlan["sessionPlans"][0]["tracks"] =
+            rawAppleTracks.map((track, idx) => ({
+              ...track,
+              position: positions.applePositions[idx],
+            }));
+
+          // Grid fallbacks attribute by position — initials[(position-1) % N], same as
+          // every Apple track — so attributionInitials stays null for them. Bonus
+          // fallbacks (declared bonus, or demoted for safety) keep the explicit
+          // named-contributor override, bypassing round-robin entirely (03-04 behaviour).
           const fallbackTracks: ImportPlan["sessionPlans"][0]["tracks"] =
-            parseFallbackTracks(p.attributes?.description?.standard).map(
-              (fallback, fallbackIdx) => ({
-                position: appleTracks.length + fallbackIdx + 1,
+            positions.fallbackPlacements.map((placement) => {
+              const fallback = parsedFallbacks[placement.index];
+              return {
+                position: placement.position,
                 title: fallback.title,
                 artistName: fallback.artist,
                 albumName: null,
@@ -325,9 +352,10 @@ export async function POST(request: Request) {
                 isrc: null,
                 appleId: null,
                 youtubeUrl: fallback.youtubeUrl,
-                attributionInitials: fallback.initials,
-              }),
-            );
+                attributionInitials:
+                  placement.kind === "bonus" ? fallback.initials : null,
+              };
+            });
 
           const tracks: ImportPlan["sessionPlans"][0]["tracks"] = [
             ...appleTracks,
@@ -336,7 +364,9 @@ export async function POST(request: Request) {
 
           // Determine attribution: round-robin — initials[(position - 1) % initials.length]
           // pos 1→initials[0], 2→initials[1], … wraps over the attendee count (usually 4,
-          // fewer when a contributor is marked MIA/AWOL — see ABSENCE_RE in parse-playlist.ts)
+          // fewer when a contributor is marked MIA/AWOL — see ABSENCE_RE in parse-playlist.ts).
+          // Grid fallback tracks are attributed by this same round-robin (attributionInitials
+          // is null for them, above) — correct now because they occupy their true position.
           const attributionParsed = parsed.initials !== null;
           const initials = parsed.initials;
 
