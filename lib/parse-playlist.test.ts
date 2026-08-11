@@ -17,7 +17,22 @@ import {
   YOUTUBE_RE,
 } from "./parse-playlist";
 
-function run() {
+// app/api/import/route.ts's import chain (lib/auth -> lib/db) throws at module-load time
+// if BETTER_AUTH_SECRET etc. are unset — Next.js loads .env.local automatically but this
+// standalone `tsx` run does not. buildSessionTrackPositions itself is pure (no env/db/fetch
+// — T-03-06-01/02), so this is a test-harness-only concern, not a production behavior
+// change. Load .env.local before the dynamic import below (dynamic, not static, so this
+// statement — not ESM's hoisted static-import evaluation order — runs first).
+try {
+  process.loadEnvFile(".env.local");
+} catch {
+  // .env.local absent (e.g. CI) — rely on already-set process.env vars instead.
+}
+
+async function run() {
+  const { buildSessionTrackPositions } = await import(
+    "@/app/api/import/route"
+  );
   // youtubeUrl = short youtu.be URL when description contains one
   {
     const result = parsePlaylistDescription(
@@ -351,7 +366,127 @@ function run() {
     assert.equal(result[0].round, null);
   }
 
+  // buildSessionTrackPositions — S3: two grid fallbacks, no demotions
+  // initials = [IT, MW, JG, JS]; IT round 1 -> (1-1)*4 + 0 + 1 = 1; JS round 2 -> (2-1)*4 + 3 + 1 = 8
+  {
+    const result = buildSessionTrackPositions({
+      appleCount: 14,
+      fallbacks: [
+        { initials: "IT", round: 1 },
+        { initials: "JS", round: 2 },
+      ],
+      initials: ["IT", "MW", "JG", "JS"],
+    });
+    assert.deepEqual(result.applePositions, [
+      2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16,
+    ]);
+    assert.deepEqual(result.fallbackPlacements, [
+      { index: 0, position: 1, kind: "grid" },
+      { index: 1, position: 8, kind: "grid" },
+    ]);
+    assert.deepEqual(result.demotions, []);
+  }
+
+  // buildSessionTrackPositions — S24: single "last" (round 4) grid fallback -> position 15
+  // initials = [MW, JG, JS, IT]; JS round 4 -> (4-1)*4 + 2 + 1 = 15
+  {
+    const result = buildSessionTrackPositions({
+      appleCount: 15,
+      fallbacks: [{ initials: "JS", round: 4 }],
+      initials: ["MW", "JG", "JS", "IT"],
+    });
+    const expectedApple = Array.from({ length: 16 }, (_, i) => i + 1).filter(
+      (p) => p !== 15,
+    );
+    assert.deepEqual(result.applePositions, expectedApple);
+    assert.deepEqual(result.fallbackPlacements, [
+      { index: 0, position: 15, kind: "grid" },
+    ]);
+    assert.deepEqual(result.demotions, []);
+  }
+
+  // buildSessionTrackPositions — bonus fallback (round null) appended after the grid
+  {
+    const result = buildSessionTrackPositions({
+      appleCount: 16,
+      fallbacks: [{ initials: "JS", round: null }],
+      initials: ["IT", "MW", "JG", "JS"],
+    });
+    assert.deepEqual(
+      result.applePositions,
+      Array.from({ length: 16 }, (_, i) => i + 1),
+    );
+    assert.deepEqual(result.fallbackPlacements, [
+      { index: 0, position: 17, kind: "bonus" },
+    ]);
+    assert.deepEqual(result.demotions, []);
+  }
+
+  // buildSessionTrackPositions — collision: two grid fallbacks resolve to the same slot ->
+  // the second one is demoted to bonus and logged.
+  {
+    const result = buildSessionTrackPositions({
+      appleCount: 14,
+      fallbacks: [
+        { initials: "IT", round: 1 },
+        { initials: "IT", round: 1 },
+      ],
+      initials: ["IT", "MW", "JG", "JS"],
+    });
+    const grid = result.fallbackPlacements.filter((p) => p.kind === "grid");
+    const bonus = result.fallbackPlacements.filter((p) => p.kind === "bonus");
+    assert.equal(grid.length, 1);
+    assert.equal(bonus.length, 1);
+    assert.equal(result.demotions.length, 1);
+    assert.equal(result.demotions[0].index, 1);
+  }
+
+  // buildSessionTrackPositions — overflow: round 4 target exceeds appleCount + gridCount ->
+  // demoted to bonus and logged.
+  {
+    const result = buildSessionTrackPositions({
+      appleCount: 2,
+      fallbacks: [{ initials: "JS", round: 4 }],
+      initials: ["MW", "JG", "JS", "IT"],
+    });
+    assert.equal(result.fallbackPlacements[0].kind, "bonus");
+    assert.equal(result.demotions.length, 1);
+    assert.equal(result.demotions[0].index, 0);
+  }
+
+  // buildSessionTrackPositions — not-present contributor -> demoted to bonus and logged.
+  {
+    const result = buildSessionTrackPositions({
+      appleCount: 12,
+      fallbacks: [{ initials: "IT", round: 1 }],
+      initials: ["MW", "JG", "JS"], // IT absent (MIA session)
+    });
+    assert.equal(result.fallbackPlacements[0].kind, "bonus");
+    assert.equal(result.demotions.length, 1);
+  }
+
+  // buildSessionTrackPositions — unparsed session (initials null): no grid reconstruction;
+  // Apple tracks keep 1..appleCount, fallback appended, no demotions.
+  {
+    const result = buildSessionTrackPositions({
+      appleCount: 10,
+      fallbacks: [{ initials: "JS", round: 2 }],
+      initials: null,
+    });
+    assert.deepEqual(
+      result.applePositions,
+      Array.from({ length: 10 }, (_, i) => i + 1),
+    );
+    assert.deepEqual(result.fallbackPlacements, [
+      { index: 0, position: 11, kind: "bonus" },
+    ]);
+    assert.deepEqual(result.demotions, []);
+  }
+
   console.log("parse-playlist.test.ts: all assertions passed");
 }
 
-run();
+run().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
