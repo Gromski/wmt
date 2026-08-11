@@ -30,9 +30,7 @@ try {
 }
 
 async function run() {
-  const { buildSessionTrackPositions } = await import(
-    "@/app/api/import/route"
-  );
+  const { buildSessionTrackPositions } = await import("@/app/api/import/route");
   // youtubeUrl = short youtu.be URL when description contains one
   {
     const result = parsePlaylistDescription(
@@ -377,9 +375,10 @@ async function run() {
       ],
       initials: ["IT", "MW", "JG", "JS"],
     });
-    assert.deepEqual(result.applePositions, [
-      2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16,
-    ]);
+    assert.deepEqual(
+      result.applePositions,
+      [2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16],
+    );
     assert.deepEqual(result.fallbackPlacements, [
       { index: 0, position: 1, kind: "grid" },
       { index: 1, position: 8, kind: "grid" },

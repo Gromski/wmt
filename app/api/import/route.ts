@@ -20,6 +20,132 @@ import {
 export const maxDuration = 300; // Explicit — matches Vercel Hobby default (RESEARCH §State of the Art)
 
 /**
+ * Pure helper (BROWSE-03 position-aware fallback design) that reconstructs a single
+ * session's true round-robin grid. Apple Music playlists are person-cycling by round —
+ * the starting person is encoded by the ORDER of `initials` — but a YouTube fallback pick
+ * is missing from the Apple playlist, which collapses the sequence and misattributes every
+ * Apple track after the gap. This helper computes each fallback's true grid position (or
+ * demotes it to a bonus, appended, when it can't be placed safely) and the resulting Apple
+ * track positions, so callers can attribute every grid track by `initials[(position-1)%N]`.
+ *
+ * No DB, no fetch, no module-level mutable state — safe to unit test directly and to call
+ * once per session in the build phase below.
+ */
+export function buildSessionTrackPositions(input: {
+  appleCount: number;
+  fallbacks: Array<{ initials: string; round: number | null }>;
+  initials: string[] | null;
+}): {
+  applePositions: number[];
+  fallbackPlacements: Array<{
+    index: number;
+    position: number;
+    kind: "grid" | "bonus";
+  }>;
+  demotions: Array<{ index: number; reason: string }>;
+} {
+  const { appleCount, fallbacks, initials } = input;
+
+  // Unparsed session — no grid reconstruction possible; preserve 03-04 behaviour verbatim:
+  // Apple tracks keep 1..appleCount, every fallback is a bonus appended in order.
+  if (initials === null) {
+    return {
+      applePositions: Array.from({ length: appleCount }, (_, i) => i + 1),
+      fallbackPlacements: fallbacks.map((_, index) => ({
+        index,
+        position: appleCount + index + 1,
+        kind: "bonus" as const,
+      })),
+      demotions: [],
+    };
+  }
+
+  const N = initials.length;
+  const gridFallbackCount = fallbacks.filter((f) => f.round !== null).length;
+  const overflowLimit = appleCount + gridFallbackCount;
+
+  const demotions: Array<{ index: number; reason: string }> = [];
+  const occupied = new Set<number>();
+  // index -> resolved grid position, for fallbacks that survive as grid placements
+  const gridPositionByIndex = new Map<number, number>();
+
+  for (let index = 0; index < fallbacks.length; index++) {
+    const fallback = fallbacks[index];
+    if (fallback.round === null) continue; // bonus by declaration — handled below
+
+    const slot = initials.indexOf(fallback.initials);
+    if (slot === -1) {
+      demotions.push({
+        index,
+        reason: `contributor "${fallback.initials}" not present in session initials`,
+      });
+      continue;
+    }
+    if (fallback.round < 1 || fallback.round > 4) {
+      demotions.push({
+        index,
+        reason: `round ${fallback.round} is out of the 1-4 grid range`,
+      });
+      continue;
+    }
+
+    const target = (fallback.round - 1) * N + slot + 1;
+
+    if (target > overflowLimit) {
+      demotions.push({
+        index,
+        reason: `computed position ${target} overflows session track count ${overflowLimit}`,
+      });
+      continue;
+    }
+    if (occupied.has(target)) {
+      demotions.push({
+        index,
+        reason: `computed position ${target} collides with another grid fallback`,
+      });
+      continue;
+    }
+
+    occupied.add(target);
+    gridPositionByIndex.set(index, target);
+  }
+
+  // Fill Apple tracks into positions 1.., in playlist order, skipping grid-occupied slots.
+  const applePositions: number[] = [];
+  let candidate = 1;
+  for (let i = 0; i < appleCount; i++) {
+    while (occupied.has(candidate)) candidate++;
+    applePositions.push(candidate);
+    candidate++;
+  }
+
+  // Bonus fallbacks (declared bonus OR demoted) appended after the last used position, in
+  // description order.
+  const maxUsed = Math.max(0, ...occupied, ...applePositions);
+  let nextBonusPosition = maxUsed + 1;
+
+  const fallbackPlacements: Array<{
+    index: number;
+    position: number;
+    kind: "grid" | "bonus";
+  }> = [];
+  for (let index = 0; index < fallbacks.length; index++) {
+    const gridPosition = gridPositionByIndex.get(index);
+    if (gridPosition !== undefined) {
+      fallbackPlacements.push({ index, position: gridPosition, kind: "grid" });
+    } else {
+      fallbackPlacements.push({
+        index,
+        position: nextBonusPosition++,
+        kind: "bonus",
+      });
+    }
+  }
+
+  return { applePositions, fallbackPlacements, demotions };
+}
+
+/**
  * In-memory representation of a fully built import plan.
  * Assembled entirely from Apple Music API data before any DB writes begin (D-04).
  */
