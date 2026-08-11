@@ -557,14 +557,16 @@ export function TasteProfileRadar({
 | A4 | No `"use cache"` for this phase; rely on Next's default static rendering instead of enabling `cacheComponents` | Pitfall 1 | Low-Medium — if the planner disagrees and wants explicit cache control immediately, enabling `cacheComponents: true` requires re-verifying `app/dashboard/page.tsx`'s `headers()`-based auth check and any Server Actions still behave correctly under Cache Components' dynamic-by-default model. This is a bigger task than "add a directive," so flag it explicitly if chosen. |
 | A5 | Genre resolution uses single highest-ranked whitelisted tag per artist (not multi-label) for all downstream uses | Architecture Pattern 2 | Low — a deliberate simplicity tradeoff; multi-label would need reconciling "genre breakdown sums to 100%" with "similarity vectors benefit from richer tagging," which is unnecessary complexity for 4 users and ~500 tracks. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the group-unique pick (D-12b) prefer artist-exclusivity or genre-exclusivity when both exist?**
+   - **RESOLVED:** Prefer artist-exclusivity first, fall back to genre-exclusivity when no exclusive artist exists — threaded into Plan 04-03 (`lib/wrapped.ts` groupUniquePick, artist-first then genre fallback).
    - What we know: D-12b specifies "a genre/artist that ONLY they chose" as one combined concept.
    - What's unclear: If a contributor has both an exclusive artist and an exclusive genre, which one becomes "the" standout pick on their Wrapped card?
    - Recommendation: Prefer artist-exclusivity first (more personal/specific per D-04's own stated rationale), fall back to genre-exclusivity only if no exclusive artist exists. This is encoded as the fallback order in Pattern 6 — flag to the user during a checkpoint if the resulting picks feel wrong for any of the four.
 
 2. **Exact wording/copy for the "wildcard" and Wrapped cards.**
+   - **RESOLVED:** Deferred to the planner/UI step — microcopy is at plan/UI discretion (fun/personal, not clinical); Plans 04-02 (wildcard ranking) and 04-03 (Wrapped cards) own the wording.
    - What we know: D-something notes this should be "fun/personal ... not clinical."
    - What's unclear: Actual microcopy is a UI/UX decision, not a research question.
    - Recommendation: Leave copywriting to the planner/UI-spec step; this research only guarantees the underlying numbers are computed correctly.
