@@ -147,5 +147,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
-| 3. Archive Browsing | 5/6 | In Progress|  |
+| 3. Archive Browsing | 6/6 | Complete | 2026-08-11 |
 | 4. Analytics | 0/TBD | Not started | - |
