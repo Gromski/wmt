@@ -1,0 +1,202 @@
+import { asc, eq } from "drizzle-orm";
+
+import * as schema from "@/db/schema";
+import { db } from "@/lib/db";
+import { resolveGenre } from "@/lib/genre-whitelist";
+
+// Phase 4 ANALYTICS-01 — single-pass server aggregation over session_tracks +
+// tracks + contributors + artist_tags. Returns a fully plain-serialisable
+// object (no Map, no Date) so it can be handed straight to client chart
+// components, mirroring app/sessions/page.tsx's query + in-memory grouping
+// style (PATTERNS.md § lib/analytics.ts).
+
+export type ContributorAnalytics = {
+  initials: string; // "MW" | "JG" | "JS" | "IT"
+  name: string;
+  topArtists: { artist: string; count: number }[]; // top 5, count desc — D-03
+  decadeHistogram: { decade: string; count: number }[]; // "1960s".."2020s" + "Unknown" — D-02
+  genreBreakdown: { genre: string; count: number }[]; // incl "Unspecified" bucket — D-01 + Pitfall 4
+  artistVector: Record<string, number>; // artistName -> track count (for Plan 02 similarity)
+  genreVector: Record<string, number>; // genre -> track count incl "Unspecified" (Plan 02)
+  // RAW, UNWEIGHTED proportions — each sums to ~1. Plan 02 applies the live
+  // PROFILE_WEIGHTS blend on top of these; do NOT bake any weighting here.
+  genreProportions: Record<string, number>;
+  decadeProportions: Record<string, number>;
+};
+
+export type AttributedRow = {
+  contributorInitials: string;
+  contributorName: string;
+  sessionId: number;
+  artistName: string;
+  primaryGenre: string | null; // null => "Unspecified" bucket
+  releaseYear: number | null; // null => "Unknown" decade bucket
+};
+
+export type AnalyticsData = {
+  contributors: ContributorAnalytics[]; // ordered MW, JG, JS, IT
+  attributedRows: AttributedRow[]; // flat rows — Plan 03 wrapped stats consume these
+};
+
+// Contributor display order for the hub — MW, JG, JS, IT (D-13/D-14 default order).
+const CONTRIBUTOR_ORDER = ["MW", "JG", "JS", "IT"];
+
+function toDecadeBucket(releaseYear: number | null): string {
+  if (releaseYear === null) return "Unknown";
+  const decade = Math.floor(releaseYear / 10) * 10;
+  return `${decade}s`;
+}
+
+type ArtistTagRow = { artistName: string; tag: string; rank: number };
+
+function buildArtistGenreMap(
+  tagRows: ArtistTagRow[],
+): Map<string, string | null> {
+  const byArtist = new Map<string, ArtistTagRow[]>();
+  for (const row of tagRows) {
+    const list = byArtist.get(row.artistName) ?? [];
+    list.push(row);
+    byArtist.set(row.artistName, list);
+  }
+  const result = new Map<string, string | null>();
+  for (const [artist, rows] of byArtist) {
+    const sorted = [...rows].sort((a, b) => a.rank - b.rank);
+    const primary =
+      sorted.map((r) => resolveGenre(r.tag)).find((g) => g !== null) ?? null;
+    result.set(artist, primary);
+  }
+  return result;
+}
+
+function toProportions(counts: Map<string, number>): Record<string, number> {
+  const total = [...counts.values()].reduce((a, b) => a + b, 0) || 1;
+  const result: Record<string, number> = {};
+  for (const [k, v] of counts) result[k] = v / total;
+  return result;
+}
+
+function mapToRecord(counts: Map<string, number>): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const [k, v] of counts) result[k] = v;
+  return result;
+}
+
+export async function getAnalyticsData(): Promise<AnalyticsData> {
+  // Query 1: attributed session_tracks joined to tracks/contributors.
+  // leftJoin + explicit null-check mirrors the established local style
+  // (app/sessions/page.tsx) even though 0 unattributed rows exist today —
+  // a future null attribution degrades gracefully instead of crashing.
+  const attributedRowsRaw = await db
+    .select({
+      contributorInitials: schema.contributors.initials,
+      contributorName: schema.contributors.name,
+      sessionId: schema.sessionTracks.sessionId,
+      artistName: schema.tracks.artistName,
+      releaseYear: schema.tracks.releaseYear,
+    })
+    .from(schema.sessionTracks)
+    .leftJoin(
+      schema.contributors,
+      eq(schema.sessionTracks.attributedContributorId, schema.contributors.id),
+    )
+    .leftJoin(
+      schema.tracks,
+      eq(schema.tracks.id, schema.sessionTracks.trackId),
+    );
+
+  // Query 2: all artist_tags ordered by artistName asc, rank asc.
+  const tagRows = await db
+    .select({
+      artistName: schema.artistTags.artistName,
+      tag: schema.artistTags.tag,
+      rank: schema.artistTags.rank,
+    })
+    .from(schema.artistTags)
+    .orderBy(asc(schema.artistTags.artistName), asc(schema.artistTags.rank));
+
+  const artistGenreMap = buildArtistGenreMap(tagRows);
+
+  // Drop rows missing a contributor or track — graceful degradation for a
+  // future null attribution / dangling track reference (D-01/CONTEXT).
+  const attributedRows: AttributedRow[] = [];
+  for (const row of attributedRowsRaw) {
+    if (!row.contributorInitials || !row.contributorName || !row.artistName) {
+      continue;
+    }
+    attributedRows.push({
+      contributorInitials: row.contributorInitials,
+      contributorName: row.contributorName,
+      sessionId: row.sessionId,
+      artistName: row.artistName,
+      primaryGenre: artistGenreMap.get(row.artistName) ?? null,
+      releaseYear: row.releaseYear ?? null,
+    });
+  }
+
+  // Group attributed rows per contributor.
+  const rowsByContributor = new Map<
+    string,
+    { name: string; rows: AttributedRow[] }
+  >();
+  for (const row of attributedRows) {
+    const existing = rowsByContributor.get(row.contributorInitials);
+    if (existing) {
+      existing.rows.push(row);
+    } else {
+      rowsByContributor.set(row.contributorInitials, {
+        name: row.contributorName,
+        rows: [row],
+      });
+    }
+  }
+
+  const contributors: ContributorAnalytics[] = [];
+  for (const initials of CONTRIBUTOR_ORDER) {
+    const entry = rowsByContributor.get(initials);
+    if (!entry) continue;
+
+    const artistCounts = new Map<string, number>();
+    const decadeCounts = new Map<string, number>();
+    const genreCounts = new Map<string, number>();
+
+    for (const row of entry.rows) {
+      artistCounts.set(
+        row.artistName,
+        (artistCounts.get(row.artistName) ?? 0) + 1,
+      );
+
+      const decade = toDecadeBucket(row.releaseYear);
+      decadeCounts.set(decade, (decadeCounts.get(decade) ?? 0) + 1);
+
+      const genre = row.primaryGenre ?? "Unspecified";
+      genreCounts.set(genre, (genreCounts.get(genre) ?? 0) + 1);
+    }
+
+    const topArtists = [...artistCounts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 5)
+      .map(([artist, count]) => ({ artist, count }));
+
+    const decadeHistogram = [...decadeCounts.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([decade, count]) => ({ decade, count }));
+
+    const genreBreakdown = [...genreCounts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([genre, count]) => ({ genre, count }));
+
+    contributors.push({
+      initials,
+      name: entry.name,
+      topArtists,
+      decadeHistogram,
+      genreBreakdown,
+      artistVector: mapToRecord(artistCounts),
+      genreVector: mapToRecord(genreCounts),
+      genreProportions: toProportions(genreCounts),
+      decadeProportions: toProportions(decadeCounts),
+    });
+  }
+
+  return { contributors, attributedRows };
+}
