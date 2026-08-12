@@ -32,6 +32,13 @@ export function GlobalHeader() {
         </Link>
 
         <nav className="flex items-center gap-3">
+          <Link
+            href="/analytics"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Analytics
+          </Link>
+
           {!isPending && !session && (
             <Button
               asChild
