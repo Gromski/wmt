@@ -135,7 +135,7 @@ Plans:
   3. The friend who most consistently diverges from the group's average choices is identified and surfaced
   4. Each friend has a Wrapped-style summary card with headline stats and standout picks
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 **Wave 1**
 
@@ -143,7 +143,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 04-02-PLAN.md — Group-overview slice: `lib/similarity.ts` (cosine blend + centroid divergence, exported tuning constants) + tests, 4×4 CSS-grid `OverlapHeatmap`, `WildcardRanking`, group-overview section at the top of the hub — ANALYTICS-02, ANALYTICS-03
+- [x] 04-02-PLAN.md — Group-overview slice: `lib/similarity.ts` (cosine blend + centroid divergence, exported tuning constants) + tests, 4×4 CSS-grid `OverlapHeatmap`, `WildcardRanking`, group-overview section at the top of the hub — ANALYTICS-02, ANALYTICS-03
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -161,4 +161,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
 | 3. Archive Browsing | 6/6 | Complete | 2026-08-11 |
-| 4. Analytics | 1/3 | In Progress|  |
+| 4. Analytics | 2/3 | In Progress|  |
