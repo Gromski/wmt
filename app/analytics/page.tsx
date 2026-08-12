@@ -5,22 +5,24 @@ import { OverlapHeatmap } from "@/components/analytics/OverlapHeatmap";
 import { TasteProfileRadar } from "@/components/analytics/TasteProfileRadar";
 import { TopArtistsBarChart } from "@/components/analytics/TopArtistsBarChart";
 import { WildcardRanking } from "@/components/analytics/WildcardRanking";
+import { WrappedCard } from "@/components/analytics/WrappedCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAnalyticsData } from "@/lib/analytics";
 import { CONTRIBUTOR_COLORS } from "@/lib/contributor-colors";
 import { buildOverlapMatrix, divergenceRanking } from "@/lib/similarity";
+import { computeWrappedStats } from "@/lib/wrapped";
 
 // Public RSC — no auth gate (ANALYTICS-01/ACCESS-04/D-13), no cache directive
 // (RESEARCH Pitfall 1 — the Cache Components flag is not enabled app-wide;
 // this route has no dynamic Request APIs so it already qualifies for Next's
 // default automatic static rendering, exactly like /sessions).
 //
-// Layout is a stacked hub (D-13): 04-01 shipped "Taste profiles"; 04-02 adds
-// "Group overview" (overlap heatmap + wildcard ranking) ABOVE it. Plan 04-03
-// (Wrapped cards) slots in BELOW "Taste profiles" — inserts a new <section>
-// here without restructuring this file.
+// Layout is a stacked hub (D-13), now complete: "Group overview" (overlap
+// heatmap + wildcard ranking, 04-02) -> "Taste profiles" (04-01) -> "Wrapped"
+// (04-03, this file's final section) — no per-person routes (D-15).
 export default async function AnalyticsPage() {
-  const { contributors } = await getAnalyticsData();
+  const data = await getAnalyticsData();
+  const { contributors } = data;
 
   const overviewContributors = contributors.map((c) => ({
     initials: c.initials,
@@ -28,6 +30,7 @@ export default async function AnalyticsPage() {
   }));
   const matrix = buildOverlapMatrix(contributors);
   const ranking = divergenceRanking(contributors);
+  const wrapped = computeWrappedStats(data);
 
   return (
     <main className="mx-auto max-w-[1120px] px-6 pt-12 pb-16">
@@ -109,7 +112,17 @@ export default async function AnalyticsPage() {
         </div>
       </section>
 
-      {/* Plan 04-03 Wrapped cards section inserts here. */}
+      <section className="mt-8">
+        <h2 className="text-base font-semibold">Wrapped</h2>
+        <p className="mt-1 text-xs font-medium text-muted-foreground">
+          Headline stats and standout picks for each friend, across all sessions
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+          {wrapped.map((stats) => (
+            <WrappedCard key={stats.initials} stats={stats} />
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

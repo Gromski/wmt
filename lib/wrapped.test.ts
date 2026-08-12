@@ -16,7 +16,8 @@ import type { AnalyticsData, AttributedRow } from "./analytics";
 import { computeWrappedStats } from "./wrapped";
 
 function row(
-  overrides: Partial<AttributedRow> & Pick<AttributedRow, "contributorInitials">,
+  overrides: Partial<AttributedRow> &
+    Pick<AttributedRow, "contributorInitials">,
 ): AttributedRow {
   return {
     contributorName: overrides.contributorInitials,

@@ -87,7 +87,7 @@ export function computeWrappedStats(data: AnalyticsData): WrappedStats[] {
     );
     const signatureGenre = realGenre
       ? realGenre.genre
-      : contributor.genreBreakdown[0]?.genre ?? "Unspecified";
+      : (contributor.genreBreakdown[0]?.genre ?? "Unspecified");
 
     const topArtist = contributor.topArtists[0]?.artist ?? "";
 
