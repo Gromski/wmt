@@ -26,7 +26,7 @@
 - [x] **ANALYTICS-01**: User can view a taste profile for each of the four friends showing their most-chosen artists, era/decade distribution, and genre breakdown across all sessions
 - [x] **ANALYTICS-02**: User can see a pairwise group overlap matrix — which pairs of friends share the most similar taste based on shared artists and genres
 - [x] **ANALYTICS-03**: App identifies and surfaces the friend who most consistently diverges from the group's average choices (the "wildcard")
-- [ ] **ANALYTICS-04**: Each friend has a Wrapped-style visual summary card: headline stats and standout picks across all sessions
+- [x] **ANALYTICS-04**: Each friend has a Wrapped-style visual summary card: headline stats and standout picks across all sessions
 
 ### Access
 
@@ -82,4 +82,4 @@
 | ANALYTICS-01 | Phase 4 — Analytics | Complete |
 | ANALYTICS-02 | Phase 4 — Analytics | Complete |
 | ANALYTICS-03 | Phase 4 — Analytics | Complete |
-| ANALYTICS-04 | Phase 4 — Analytics | Pending |
+| ANALYTICS-04 | Phase 4 — Analytics | Complete |

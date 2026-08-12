@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Access & Shell** - Authenticated private dashboard and public read-only URL
 - [x] **Phase 2: Import Pipeline** - Spotify/Apple Music import, attribution parsing, enrichment, date entry (completed 2026-07-14)
 - [x] **Phase 3: Archive Browsing** - Session list, track detail, timeline, search and filter (completed 2026-08-10)
-- [ ] **Phase 4: Analytics** - Taste profiles, group overlap, wildcard detection, Wrapped cards
+- [x] **Phase 4: Analytics** - Taste profiles, group overlap, wildcard detection, Wrapped cards (completed 2026-08-12)
 
 ## Phase Details
 
@@ -135,7 +135,7 @@ Plans:
   3. The friend who most consistently diverges from the group's average choices is identified and surfaced
   4. Each friend has a Wrapped-style summary card with headline stats and standout picks
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 **Wave 1**
 
@@ -147,7 +147,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 04-03-PLAN.md — Wrapped-cards slice: `lib/wrapped.ts` (signature genre + #1 artist, group-unique pick, era range, edge-case-correct headline counts) + tests, bold per-contributor `WrappedCard`, inline Wrapped section — ANALYTICS-04
+- [x] 04-03-PLAN.md — Wrapped-cards slice: `lib/wrapped.ts` (signature genre + #1 artist, group-unique pick, era range, edge-case-correct headline counts) + tests, bold per-contributor `WrappedCard`, inline Wrapped section — ANALYTICS-04
 
 **UI hint**: yes
 
@@ -161,4 +161,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Access & Shell | 4/4 | Complete | 2026-06-12 |
 | 2. Import Pipeline | 3/3 | Complete   | 2026-07-14 |
 | 3. Archive Browsing | 6/6 | Complete | 2026-08-11 |
-| 4. Analytics | 2/3 | In Progress|  |
+| 4. Analytics | 3/3 | Complete   | 2026-08-12 |
