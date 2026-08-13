@@ -81,6 +81,74 @@ function mapToRecord(counts: Map<string, number>): Record<string, number> {
   return result;
 }
 
+// buildSharedGenreAxis — Phase 4 gap-closure (04-04, ANALYTICS-01 UAT fix).
+// Pure helper (no DB/fetch) so all four TasteProfileRadar charts can plot the
+// SAME ordered genre axis, making the four fingerprints directly comparable
+// instead of each radar independently rendering its own 24-28 genres.
+//
+// Axis = OVERLAP genres (present for >=2 contributors, ranked by group-total
+// desc, capped at `overlapCap`) + each contributor's single top UNIQUE genre
+// (present for exactly 1 contributor, capped at `uniquesPerPerson` per
+// person). "Unspecified" is always excluded. Deterministic: ties broken by
+// genre name (localeCompare).
+export function buildSharedGenreAxis(
+  contributors: {
+    initials: string;
+    genreBreakdown: { genre: string; count: number }[];
+  }[],
+  opts?: { overlapCap?: number; uniquesPerPerson?: number },
+): string[] {
+  const overlapCap = opts?.overlapCap ?? 10;
+  const uniquesPerPerson = opts?.uniquesPerPerson ?? 1;
+
+  // Tally presence (how many contributors have this genre at all) and the
+  // group-total count, skipping the "Unspecified" bucket entirely.
+  const tally = new Map<string, { presence: number; total: number }>();
+  for (const contributor of contributors) {
+    for (const { genre, count } of contributor.genreBreakdown) {
+      if (genre === "Unspecified" || count <= 0) continue;
+      const existing = tally.get(genre);
+      if (existing) {
+        existing.presence += 1;
+        existing.total += count;
+      } else {
+        tally.set(genre, { presence: 1, total: count });
+      }
+    }
+  }
+
+  const overlap = [...tally.entries()]
+    .filter(([, v]) => v.presence >= 2)
+    .sort((a, b) => b[1].total - a[1].total || a[0].localeCompare(b[0]))
+    .slice(0, overlapCap)
+    .map(([genre]) => genre);
+
+  const axis = [...overlap];
+  const axisSet = new Set(axis);
+
+  for (const contributor of contributors) {
+    const uniques = contributor.genreBreakdown
+      .filter(
+        ({ genre, count }) =>
+          genre !== "Unspecified" &&
+          count > 0 &&
+          tally.get(genre)?.presence === 1,
+      )
+      .sort((a, b) => b.count - a.count || a.genre.localeCompare(b.genre));
+
+    let added = 0;
+    for (const { genre } of uniques) {
+      if (added >= uniquesPerPerson) break;
+      if (axisSet.has(genre)) continue;
+      axis.push(genre);
+      axisSet.add(genre);
+      added += 1;
+    }
+  }
+
+  return axis;
+}
+
 export async function getAnalyticsData(): Promise<AnalyticsData> {
   // Query 1: attributed session_tracks joined to tracks/contributors.
   // leftJoin + explicit null-check mirrors the established local style
