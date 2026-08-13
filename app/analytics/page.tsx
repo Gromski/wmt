@@ -7,7 +7,7 @@ import { TopArtistsBarChart } from "@/components/analytics/TopArtistsBarChart";
 import { WildcardRanking } from "@/components/analytics/WildcardRanking";
 import { WrappedCard } from "@/components/analytics/WrappedCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAnalyticsData } from "@/lib/analytics";
+import { buildSharedGenreAxis, getAnalyticsData } from "@/lib/analytics";
 import { CONTRIBUTOR_COLORS } from "@/lib/contributor-colors";
 import { buildOverlapMatrix, divergenceRanking } from "@/lib/similarity";
 import { computeWrappedStats } from "@/lib/wrapped";
@@ -31,6 +31,11 @@ export default async function AnalyticsPage() {
   const matrix = buildOverlapMatrix(contributors);
   const ranking = divergenceRanking(contributors);
   const wrapped = computeWrappedStats(data);
+
+  // Shared genre axis (04-04 UAT gap-closure) — computed ONCE so all four
+  // TasteProfileRadar charts plot the same ordered genres and are directly
+  // comparable, instead of each rendering its own 24-28 genres.
+  const genreAxis = buildSharedGenreAxis(contributors);
 
   return (
     <main className="mx-auto max-w-[1120px] px-6 pt-12 pb-16">
@@ -62,6 +67,16 @@ export default async function AnalyticsPage() {
         <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
           {contributors.map((contributor) => {
             const color = CONTRIBUTOR_COLORS[contributor.initials];
+            const genreCounts = new Map(
+              contributor.genreBreakdown.map(({ genre, count }) => [
+                genre,
+                count,
+              ]),
+            );
+            const axisAlignedGenreData = genreAxis.map((genre) => ({
+              genre,
+              count: genreCounts.get(genre) ?? 0,
+            }));
             return (
               <Card key={contributor.initials}>
                 <CardHeader>
@@ -83,7 +98,7 @@ export default async function AnalyticsPage() {
                       </p>
                       <TasteProfileRadar
                         initials={contributor.initials}
-                        data={contributor.genreBreakdown}
+                        data={axisAlignedGenreData}
                       />
                     </div>
                     <div>

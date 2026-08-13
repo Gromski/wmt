@@ -27,7 +27,7 @@ export function TasteProfileRadar({
 
   if (data.length === 0) {
     return (
-      <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
         No genre data yet
       </div>
     );
@@ -36,14 +36,32 @@ export function TasteProfileRadar({
   return (
     <ChartContainer
       config={chartConfig}
-      className="mx-auto aspect-square max-h-[280px]"
+      className="mx-auto aspect-square max-h-[320px] w-full max-w-[320px]"
     >
-      <RadarChart data={data}>
+      <RadarChart
+        data={data}
+        outerRadius="70%"
+        margin={{ top: 16, bottom: 16, left: 64, right: 64 }}
+      >
         <ChartTooltip content={<ChartTooltipContent />} />
-        <PolarAngleAxis dataKey="genre" />
+        <PolarAngleAxis
+          dataKey="genre"
+          tick={{ fontSize: 11 }}
+          tickFormatter={truncateLabel}
+        />
         <PolarGrid />
         <Radar dataKey="count" fill={color} fillOpacity={0.5} stroke={color} />
       </RadarChart>
     </ChartContainer>
   );
+}
+
+// Truncate very long genre labels (e.g. "Singer-Songwriter", "Drum & Bass")
+// so the outermost PolarAngleAxis labels don't overflow the card width —
+// the shared ~14-genre axis (04-04 UAT gap-closure) leaves less room per
+// spoke than the previous 24-28 genre per-person axis did.
+const MAX_LABEL_LENGTH = 14;
+function truncateLabel(label: string): string {
+  if (label.length <= MAX_LABEL_LENGTH) return label;
+  return `${label.slice(0, MAX_LABEL_LENGTH - 1)}…`;
 }
