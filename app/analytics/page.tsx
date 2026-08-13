@@ -7,7 +7,11 @@ import { TopArtistsBarChart } from "@/components/analytics/TopArtistsBarChart";
 import { WildcardRanking } from "@/components/analytics/WildcardRanking";
 import { WrappedCard } from "@/components/analytics/WrappedCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildSharedGenreAxis, getAnalyticsData } from "@/lib/analytics";
+import {
+  buildSharedDecadeAxis,
+  buildSharedGenreAxis,
+  getAnalyticsData,
+} from "@/lib/analytics";
 import { CONTRIBUTOR_COLORS } from "@/lib/contributor-colors";
 import { buildOverlapMatrix, divergenceRanking } from "@/lib/similarity";
 import { firstName } from "@/lib/utils";
@@ -37,6 +41,11 @@ export default async function AnalyticsPage() {
   // TasteProfileRadar charts plot the same ordered genres and are directly
   // comparable, instead of each rendering its own 24-28 genres.
   const genreAxis = buildSharedGenreAxis(contributors);
+
+  // Shared decade axis — same idea for the era bar charts: every contributor
+  // renders the same ordered decades (0-filled where absent) so the charts
+  // have matching bars and are directly comparable.
+  const decadeAxis = buildSharedDecadeAxis(contributors);
 
   return (
     <main className="mx-auto max-w-[1120px] px-6 pt-12 pb-16">
@@ -78,6 +87,16 @@ export default async function AnalyticsPage() {
               genre,
               count: genreCounts.get(genre) ?? 0,
             }));
+            const decadeCounts = new Map(
+              contributor.decadeHistogram.map(({ decade, count }) => [
+                decade,
+                count,
+              ]),
+            );
+            const axisAlignedDecadeData = decadeAxis.map((decade) => ({
+              decade,
+              count: decadeCounts.get(decade) ?? 0,
+            }));
             return (
               <Card key={contributor.initials}>
                 <CardHeader>
@@ -108,7 +127,7 @@ export default async function AnalyticsPage() {
                       </p>
                       <EraBarChart
                         initials={contributor.initials}
-                        data={contributor.decadeHistogram}
+                        data={axisAlignedDecadeData}
                       />
                     </div>
                     <div>

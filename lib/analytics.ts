@@ -149,6 +149,29 @@ export function buildSharedGenreAxis(
   return axis;
 }
 
+// Shared decade axis so every contributor's era bar chart has the SAME bars
+// in the same order (comparable shapes, matching the shared genre radar).
+// Returns the chronological union of all decades any contributor has, with
+// the "Unknown" bucket forced last. Each chart 0-fills decades it lacks.
+export function buildSharedDecadeAxis(
+  contributors: {
+    decadeHistogram: { decade: string; count: number }[];
+  }[],
+): string[] {
+  const present = new Set<string>();
+  for (const contributor of contributors) {
+    for (const { decade, count } of contributor.decadeHistogram) {
+      if (count > 0) present.add(decade);
+    }
+  }
+
+  return [...present].sort((a, b) => {
+    if (a === "Unknown") return 1; // Unknown always last
+    if (b === "Unknown") return -1;
+    return a.localeCompare(b); // "1940s" < "1950s" < … < "2020s"
+  });
+}
+
 export async function getAnalyticsData(): Promise<AnalyticsData> {
   // Query 1: attributed session_tracks joined to tracks/contributors.
   // leftJoin + explicit null-check mirrors the established local style

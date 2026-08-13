@@ -9,7 +9,7 @@
 
 import assert from "node:assert/strict";
 
-import { buildSharedGenreAxis } from "./analytics";
+import { buildSharedDecadeAxis, buildSharedGenreAxis } from "./analytics";
 
 type Contributor = {
   initials: string;
@@ -160,6 +160,32 @@ function run() {
   {
     const axis = buildSharedGenreAxis(contributors);
     assert.equal(new Set(axis).size, axis.length, "no duplicate entries");
+  }
+
+  // buildSharedDecadeAxis: chronological union of all decades, Unknown last,
+  // 0-count buckets ignored, no duplicates.
+  {
+    const decadeContributors = [
+      {
+        decadeHistogram: [
+          { decade: "1960s", count: 8 },
+          { decade: "1980s", count: 24 },
+          { decade: "Unknown", count: 7 },
+        ],
+      },
+      {
+        decadeHistogram: [
+          { decade: "1940s", count: 1 },
+          { decade: "1980s", count: 15 },
+          { decade: "2020s", count: 8 },
+          { decade: "1950s", count: 0 }, // zero count — must be excluded
+        ],
+      },
+    ];
+    const axis = buildSharedDecadeAxis(decadeContributors);
+    assert.deepEqual(axis, ["1940s", "1960s", "1980s", "2020s", "Unknown"]);
+    assert.equal(new Set(axis).size, axis.length, "no duplicate decades");
+    assert.equal(axis[axis.length - 1], "Unknown", "Unknown sorts last");
   }
 
   console.log("all assertions passed");
