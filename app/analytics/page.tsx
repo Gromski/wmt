@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buildSharedGenreAxis, getAnalyticsData } from "@/lib/analytics";
 import { CONTRIBUTOR_COLORS } from "@/lib/contributor-colors";
 import { buildOverlapMatrix, divergenceRanking } from "@/lib/similarity";
+import { firstName } from "@/lib/utils";
 import { computeWrappedStats } from "@/lib/wrapped";
 
 // Public RSC — no auth gate (ANALYTICS-01/ACCESS-04/D-13), no cache directive
@@ -81,7 +82,7 @@ export default async function AnalyticsPage() {
               <Card key={contributor.initials}>
                 <CardHeader>
                   <CardTitle style={{ color: color?.bg }}>
-                    {contributor.name}
+                    {firstName(contributor.name)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-6">

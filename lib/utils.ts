@@ -15,3 +15,9 @@ export function getInitials(name: string): string {
     .map((s) => s[0]?.toUpperCase() ?? "")
     .join("");
 }
+
+// First name only — used on the analytics surface for a less formal tone
+// (e.g. "Mark" instead of "Mark Wright"). Falls back to the full string.
+export function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] ?? name;
+}

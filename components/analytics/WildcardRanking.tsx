@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { CONTRIBUTOR_COLORS } from "@/lib/contributor-colors";
+import { firstName } from "@/lib/utils";
 
 // Plain server component (no "use client") — renders the divergenceRanking
 // output as an ordered list. D-07: all four are shown, ranked, with the top
@@ -39,7 +40,7 @@ export function WildcardRanking({
                   className="text-sm font-semibold"
                   style={{ color: color?.bg }}
                 >
-                  {entry.name}
+                  {firstName(entry.name)}
                 </span>
                 {isWildcard && (
                   <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">

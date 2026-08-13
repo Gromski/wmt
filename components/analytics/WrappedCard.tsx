@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { CONTRIBUTOR_COLORS } from "@/lib/contributor-colors";
+import { firstName } from "@/lib/utils";
 import type { WrappedStats } from "@/lib/wrapped";
 
 // Plain server component (no "use client") — bold, vivid, one card per
@@ -37,7 +38,9 @@ export function WrappedCard({ stats }: { stats: WrappedStats }) {
           <p className="text-xs font-medium uppercase tracking-wide opacity-80">
             Wrapped
           </p>
-          <h3 className="text-2xl font-bold leading-tight">{stats.name}</h3>
+          <h3 className="text-2xl font-bold leading-tight">
+            {firstName(stats.name)}
+          </h3>
         </div>
 
         <div>
@@ -53,7 +56,10 @@ export function WrappedCard({ stats }: { stats: WrappedStats }) {
             Standout pick
           </p>
           <p className="text-sm font-semibold">
-            {formatGroupUniquePick(stats.name, stats.groupUniquePick)}
+            {formatGroupUniquePick(
+              firstName(stats.name),
+              stats.groupUniquePick,
+            )}
           </p>
         </div>
 

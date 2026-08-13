@@ -33,6 +33,12 @@ export function GlobalHeader() {
 
         <nav className="flex items-center gap-3">
           <Link
+            href="/sessions"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Sessions
+          </Link>
+          <Link
             href="/analytics"
             className="text-sm font-medium text-muted-foreground hover:text-foreground"
           >
