@@ -21,6 +21,19 @@ function appleLink(appleId: string | null): string | null {
   return `https://music.apple.com/gb/song/${appleId}`;
 }
 
+// Static publish: prerender every session page at build from the baked data
+// snapshot so production needs no runtime database. dynamicParams=false means
+// any non-prerendered session number 404s statically instead of invoking a
+// server function.
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const rows = await db
+    .select({ sessionNumber: schema.sessions.sessionNumber })
+    .from(schema.sessions);
+  return rows.map((row) => ({ sessionNumber: String(row.sessionNumber) }));
+}
+
 export default async function SessionDetailPage({
   params,
 }: {
