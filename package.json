@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:snapshot": "mkdir -p data && rm -f data/archive.db && sqlite3 local.db \".dump sessions tracks session_tracks contributors artist_tags\" | sqlite3 data/archive.db && echo \"Wrote data/archive.db — commit it to publish updated data.\""
   },
   "dependencies": {
     "@libsql/client": "0.17.3",

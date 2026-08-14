@@ -1,0 +1,21 @@
+# Static publish model (see docs/DEPLOY.md).
+# The public pages (/, /analytics, /sessions, /sessions/[n]) are prerendered at
+# build time from the committed data snapshot, so production needs no runtime
+# database. Admin/import/auth are local-only.
+
+[build]
+  command = "npm run build"
+
+[build.environment]
+  # Bake data from the committed music-only snapshot instead of the (gitignored)
+  # local dev DB. @libsql/client resolves this file: path from the repo root.
+  DATABASE_URL = "file:data/archive.db"
+  NODE_VERSION = "22"
+
+# BETTER_AUTH_SECRET is NOT set here — set a throwaway value in the Netlify UI
+# (Site config → Environment variables). It is only needed so the unused
+# auth/api route modules don't throw during the build; no real auth runs in
+# the static production deploy.
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
