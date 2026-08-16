@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Warwick Massive Tunage
 
-## Getting Started
+A browsable archive and analytics for the music sessions four friends (Mark, Jack,
+Jon, Iwan) have run over Teams — 31+ themed sessions, four songs each, pulled from
+Apple Music and enriched with Last.fm genre tags.
 
-First, run the development server:
+Production is a **pre-rendered, read-only static site** on Netlify. Data management
+(importing sessions, entering dates, fixing attribution) happens **locally**;
+publishing new data is a rebuild. See [`docs/DEPLOY.md`](docs/DEPLOY.md) for the full
+deployment model.
+
+## Stack
+
+Next.js 16 (App Router) · React 19 · TypeScript · Drizzle ORM + libSQL/SQLite ·
+Better Auth · Tailwind v4 + shadcn/ui · Recharts · Biome.
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.local.example .env.local   # then fill in the values (see that file)
+npm run dev                          # http://127.0.0.1:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Local dev uses a SQLite file (`DATABASE_URL=file:local.db`). To manage data you sign
+in as admin, open `/dashboard`, connect Apple Music (MusicKit), and run the import.
+Importing/date-entry/attribution require the Apple + Last.fm keys in `.env.local`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Adding a new session (publishing)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+New sessions are added locally, then published by committing a refreshed data
+snapshot — Netlify rebuilds the static site from it. There is no live database or
+admin UI in production.
 
-## Learn More
+```bash
+# 1. Manage data locally (updates local.db):
+#    - npm run dev, sign in as admin, go to /dashboard
+#    - connect Apple Music and click "Start import" to sync sessions
+#    - set the session date and fix any attribution flags on the dashboard
 
-To learn more about Next.js, take a look at the following resources:
+# 2. Regenerate the committed data snapshot (music tables only — no auth/PII):
+npm run db:snapshot
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 3. Commit the snapshot and push — Netlify rebuilds and republishes:
+git add data/archive.db
+git commit -m "data: add session NN (<theme>)"
+git push
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The public pages (`/`, `/analytics`, `/sessions`, `/sessions/[n]`) are prerendered at
+build from `data/archive.db`, so the new session appears once the Netlify build
+finishes. `data/archive.db` never contains the Better Auth `user`/`session`/`account`
+tables — only `sessions`, `tracks`, `session_tracks`, `contributors`, `artist_tags`.
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Local dev server |
+| `npm run build` | Production build (prerenders public pages) |
+| `npm run db:push` | Apply the Drizzle schema to `local.db` |
+| `npm run db:snapshot` | Regenerate `data/archive.db` from `local.db` for publishing |
+| `npm run db:studio` | Drizzle Studio |
+| `npm run lint` / `npm run typecheck` | Biome check / TypeScript check |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+One-time Netlify setup and the publish flow are documented in
+[`docs/DEPLOY.md`](docs/DEPLOY.md). In short: connect the repo (build config comes
+from `netlify.toml`), set a throwaway `BETTER_AUTH_SECRET` in the Netlify UI, and
+push. No runtime database is required.
