@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/tooltip";
 import * as schema from "@/db/schema";
 import { db } from "@/lib/db";
+import { sessionLengthLabel } from "@/lib/duration";
+import { buildRepeatIndex, repeatKey } from "@/lib/repeats";
 
 function appleLink(appleId: string | null): string | null {
   if (!appleId) return null;
@@ -57,6 +59,7 @@ export default async function SessionDetailPage({
       releaseYear: schema.tracks.releaseYear,
       appleId: schema.tracks.appleId,
       youtubeUrl: schema.tracks.youtubeUrl,
+      durationMs: schema.tracks.durationMs,
       contributorInitials: schema.contributors.initials,
       contributorName: schema.contributors.name,
     })
@@ -74,6 +77,26 @@ export default async function SessionDetailPage({
     .orderBy(schema.sessionTracks.position);
 
   if (rows.length === 0) notFound();
+
+  // Second, archive-wide query (~474 rows, build-time only) so the repeat
+  // index reflects EVERY session, not just this one — a repeat can only be
+  // detected by comparing across sessions (design Feature 2).
+  const allTrackRows = await db
+    .select({
+      sessionNumber: schema.sessions.sessionNumber,
+      title: schema.tracks.title,
+      artistName: schema.tracks.artistName,
+    })
+    .from(schema.sessionTracks)
+    .innerJoin(
+      schema.tracks,
+      eq(schema.tracks.id, schema.sessionTracks.trackId),
+    )
+    .innerJoin(
+      schema.sessions,
+      eq(schema.sessions.id, schema.sessionTracks.sessionId),
+    );
+  const repeatIndex = buildRepeatIndex(allTrackRows);
 
   const first = rows[0];
   const date = first.date instanceof Date ? first.date.getTime() : first.date;
@@ -95,9 +118,12 @@ export default async function SessionDetailPage({
       releaseYear: r.releaseYear,
       appleId: r.appleId,
       youtubeUrl: r.youtubeUrl,
+      durationMs: r.durationMs,
       contributorInitials: r.contributorInitials,
       contributorName: r.contributorName,
     }));
+
+  const sessionLength = sessionLengthLabel(tracks.map((t) => t.durationMs));
 
   const headerContributors = new Map<string, string>();
   for (const t of tracks) {
@@ -135,6 +161,7 @@ export default async function SessionDetailPage({
           >
             {dateLabel}
           </p>
+          <p className="mt-1 text-sm text-muted-foreground">{sessionLength}</p>
 
           {headerContributors.size > 0 && (
             <div className="mt-3 flex items-center gap-1">
@@ -177,6 +204,9 @@ export default async function SessionDetailPage({
             const apple = appleLink(t.appleId);
             const youtube = t.youtubeUrl;
             const hasContributor = t.contributorInitials && t.contributorName;
+            const otherSessions = (
+              repeatIndex.get(repeatKey(t.title, t.artistName)) ?? []
+            ).filter((n) => n !== num);
             return (
               <li key={t.position} className="flex items-center gap-3 py-4">
                 <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
@@ -190,8 +220,27 @@ export default async function SessionDetailPage({
                   />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base text-foreground">
-                    {t.title}
+                  <p className="flex items-center gap-2 truncate text-base text-foreground">
+                    <span className="truncate">{t.title}</span>
+                    {otherSessions.length > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="shrink-0 gap-1 font-normal text-muted-foreground"
+                      >
+                        Repeat: also in{" "}
+                        {otherSessions.map((n, i) => (
+                          <span key={n} className="contents">
+                            {i > 0 ? ", " : ""}
+                            <Link
+                              href={`/sessions/${n}`}
+                              className="underline-offset-2 hover:underline"
+                            >
+                              S{n}
+                            </Link>
+                          </span>
+                        ))}
+                      </Badge>
+                    )}
                   </p>
                   <p className="truncate text-sm text-muted-foreground">
                     {t.artistName}
