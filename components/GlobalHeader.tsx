@@ -4,6 +4,7 @@ import { LogIn, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -44,6 +45,8 @@ export function GlobalHeader() {
           >
             Analytics
           </Link>
+
+          <ThemeToggle />
 
           {!isPending && !session && (
             <Button

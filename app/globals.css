@@ -49,24 +49,24 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.966 0.006 83); /* warm off-white paper */
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: oklch(0.985 0.004 83); /* sheet — lifts off the page */
   --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.985 0.004 83);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.554 0.252 296); /* violet-600 brand accent */
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.935 0.006 83);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --muted: oklch(0.935 0.006 83);
+  --muted-foreground: oklch(0.5 0.004 83);
+  --accent: oklch(0.935 0.006 83);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.9 0.007 83);
+  --input: oklch(0.9 0.007 83);
+  --ring: oklch(0.554 0.252 296); /* violet-600 focus ring */
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -81,6 +81,14 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Phase 3 UI-SPEC — fixed four-person contributor colour map (LOCKED).
+     Vivid mid-tones that read on both light and dark, so defined once here
+     (theme-independent) rather than per-theme. */
+  --contributor-mw: oklch(0.554 0.252 296); /* violet-600 */
+  --contributor-jg: oklch(0.546 0.215 262); /* blue-600 */
+  --contributor-js: oklch(0.769 0.156 70); /* amber-500 */
+  --contributor-it: oklch(0.596 0.145 163); /* emerald-600 */
 }
 
 .dark {
@@ -115,12 +123,6 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-
-  /* Phase 3 UI-SPEC — fixed four-person contributor colour map (LOCKED) */
-  --contributor-mw: oklch(0.554 0.252 296); /* violet-600 */
-  --contributor-jg: oklch(0.546 0.215 262); /* blue-600 */
-  --contributor-js: oklch(0.769 0.156 70); /* amber-500 */
-  --contributor-it: oklch(0.596 0.145 163); /* emerald-600 */
 }
 
 @layer base {
@@ -133,4 +135,12 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Subtle paper grain in light mode only. Inline SVG fractal-noise (CSP-safe,
+   no external asset), desaturated and very low opacity so it reads as paper
+   texture over the warm off-white background. Dark mode stays clean. */
+html:not(.dark) body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.07'/%3E%3C/svg%3E");
+  background-attachment: fixed;
 }
