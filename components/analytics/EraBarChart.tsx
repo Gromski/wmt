@@ -27,15 +27,21 @@ export function EraBarChart({
 
   if (data.length === 0) {
     return (
-      <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
         No era data yet
       </div>
     );
   }
 
   return (
-    <ChartContainer config={chartConfig} className="max-h-[220px] w-full">
-      <BarChart data={data}>
+    // Explicit height (aspect-auto overrides ChartContainer's default
+    // aspect-video) so the ResponsiveContainer gets a definite box and the
+    // chart can't overflow into the section below it.
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-auto h-[200px] w-full"
+    >
+      <BarChart data={data} margin={{ top: 4, bottom: 4 }}>
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="decade"

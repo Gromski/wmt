@@ -26,15 +26,25 @@ export function TopArtistsBarChart({
 
   if (data.length === 0) {
     return (
-      <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-[210px] items-center justify-center text-sm text-muted-foreground">
         No artist data yet
       </div>
     );
   }
 
   return (
-    <ChartContainer config={chartConfig} className="max-h-[220px] w-full">
-      <BarChart data={data} layout="vertical">
+    // Explicit height (aspect-auto overrides ChartContainer's default
+    // aspect-video) so all five horizontal bars fit and render fully instead
+    // of being squashed/clipped.
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-auto h-[210px] w-full"
+    >
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ top: 4, bottom: 4, left: 4, right: 8 }}
+      >
         <CartesianGrid horizontal={false} />
         <XAxis type="number" dataKey="count" hide />
         <YAxis
