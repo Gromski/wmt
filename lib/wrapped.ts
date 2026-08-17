@@ -1,4 +1,5 @@
 import type { AnalyticsData } from "./analytics";
+import { buildRepeatIndex, repeatedPicks as repeatedPicksFor } from "./repeats";
 
 // Phase 4 ANALYTICS-04 — Wrapped-card standout stats (D-12). Pure functions
 // over the already-aggregated AnalyticsData contract from lib/analytics.ts
@@ -13,6 +14,7 @@ export type WrappedStats = {
   groupUniquePick: { kind: "artist" | "genre"; value: string } | null; // artist-first, genre fallback (D-12b)
   eraRange: { oldest: number | null; newest: number | null }; // by release_year (D-12c)
   headlineCounts: { tracks: number; distinctArtists: number; sessions: number }; // D-12d
+  repeatedPicks: { title: string; artist: string; sessions: number[] }[]; // design Feature 2 — songs this person picked that recur across sessions
 };
 
 // Given rows keyed by contributorInitials -> keyed value (artistName or
@@ -79,6 +81,17 @@ export function computeWrappedStats(data: AnalyticsData): WrappedStats[] {
     })),
   );
 
+  // Archive-wide repeat index, built once (not per contributor) — a repeat
+  // is a property of the song across the whole archive, not of any one
+  // person's rows.
+  const repeatIndex = buildRepeatIndex(
+    data.attributedRows.map((r) => ({
+      title: r.title,
+      artistName: r.artistName,
+      sessionNumber: r.sessionNumber,
+    })),
+  );
+
   return data.contributors.map((contributor) => {
     // signatureGenre: highest-count genre, preferring a real genre over
     // "Unspecified" when the person has any real-genre tracks (D-12a).
@@ -114,6 +127,15 @@ export function computeWrappedStats(data: AnalyticsData): WrappedStats[] {
     const distinctArtists = new Set(rows.map((r) => r.artistName)).size;
     const distinctSessions = new Set(rows.map((r) => r.sessionId)).size;
 
+    const contributorRepeatedPicks = repeatedPicksFor(
+      rows.map((r) => ({
+        title: r.title,
+        artistName: r.artistName,
+        sessionNumber: r.sessionNumber,
+      })),
+      repeatIndex,
+    );
+
     return {
       initials: contributor.initials,
       name: contributor.name,
@@ -126,6 +148,7 @@ export function computeWrappedStats(data: AnalyticsData): WrappedStats[] {
         distinctArtists,
         sessions: distinctSessions,
       },
+      repeatedPicks: contributorRepeatedPicks,
     };
   });
 }

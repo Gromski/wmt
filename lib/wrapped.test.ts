@@ -23,6 +23,8 @@ function row(
     contributorName: overrides.contributorInitials,
     sessionId: 1,
     artistName: "Unknown Artist",
+    title: "Unknown Title",
+    sessionNumber: overrides.sessionId ?? 1,
     primaryGenre: null,
     releaseYear: null,
     ...overrides,
@@ -43,7 +45,9 @@ function run() {
       contributorInitials: "A",
       contributorName: "Alpha",
       sessionId: 1,
+      sessionNumber: 1,
       artistName: "Shared Band",
+      title: "Shared Song",
       primaryGenre: "Rock",
       releaseYear: 1995,
     }),
@@ -51,7 +55,9 @@ function run() {
       contributorInitials: "A",
       contributorName: "Alpha",
       sessionId: 2,
+      sessionNumber: 2,
       artistName: "A Only Band",
+      title: "A Only Song",
       primaryGenre: "Rock",
       releaseYear: 2001,
     }),
@@ -59,15 +65,41 @@ function run() {
       contributorInitials: "A",
       contributorName: "Alpha",
       sessionId: 3,
+      sessionNumber: 3,
       artistName: "A Only Band",
+      title: "A Only Song 2",
       primaryGenre: "Rock",
       releaseYear: null,
+    }),
+    // A picked "Echo Song" (Repeat Band) in both sessions 1 and 4 — the
+    // repeatedPicks fixture: a person choosing the same song twice.
+    row({
+      contributorInitials: "A",
+      contributorName: "Alpha",
+      sessionId: 1,
+      sessionNumber: 1,
+      artistName: "Repeat Band",
+      title: "Echo Song",
+      primaryGenre: "Rock",
+      releaseYear: 1999,
+    }),
+    row({
+      contributorInitials: "A",
+      contributorName: "Alpha",
+      sessionId: 4,
+      sessionNumber: 4,
+      artistName: "Repeat Band",
+      title: "echo song", // case/whitespace-insensitive match with the row above
+      primaryGenre: "Rock",
+      releaseYear: 1999,
     }),
     row({
       contributorInitials: "B",
       contributorName: "Beta",
       sessionId: 1,
+      sessionNumber: 1,
       artistName: "Shared Band",
+      title: "Shared Song",
       primaryGenre: "Jazz",
       releaseYear: 1980,
     }),
@@ -75,7 +107,9 @@ function run() {
       contributorInitials: "B",
       contributorName: "Beta",
       sessionId: 2,
+      sessionNumber: 2,
       artistName: "Shared Band",
+      title: "Shared Song 2",
       primaryGenre: "Jazz",
       releaseYear: 1970,
     }),
@@ -83,7 +117,9 @@ function run() {
       contributorInitials: "C",
       contributorName: "Charlie",
       sessionId: 1,
+      sessionNumber: 1,
       artistName: "Rock Band",
+      title: "Rock Song",
       primaryGenre: "Rock",
       releaseYear: 2010,
     }),
@@ -91,7 +127,9 @@ function run() {
       contributorInitials: "C",
       contributorName: "Charlie",
       sessionId: 2,
+      sessionNumber: 2,
       artistName: "Rock Band",
+      title: "Rock Song 2",
       primaryGenre: "Rock",
       releaseYear: 2015,
     }),
@@ -99,7 +137,9 @@ function run() {
       contributorInitials: "C",
       contributorName: "Charlie",
       sessionId: 3,
+      sessionNumber: 3,
       artistName: "Rock Band",
+      title: "Rock Song 3",
       primaryGenre: "Rock",
       releaseYear: 2015,
     }),
@@ -182,12 +222,22 @@ function run() {
   // B has years [1980, 1970] -> oldest 1970, newest 1980.
   assert.deepEqual(b?.eraRange, { oldest: 1970, newest: 1980 });
 
-  // Headline counts: A appears in sessions 1,2,3 (distinct = 3); B appears
-  // in sessions 1,2 only (distinct = 2, not hardcoded 31/3).
-  assert.equal(a?.headlineCounts.sessions, 3);
+  // Headline counts: A appears in sessions 1,2,3,4 (distinct = 4, the extra
+  // "Echo Song" repeat fixture adds session 4); B appears in sessions 1,2
+  // only (distinct = 2, not hardcoded 31/3).
+  assert.equal(a?.headlineCounts.sessions, 4);
   assert.equal(b?.headlineCounts.sessions, 2);
-  assert.equal(a?.headlineCounts.tracks, 3);
-  assert.equal(a?.headlineCounts.distinctArtists, 2); // Shared Band + A Only Band
+  assert.equal(a?.headlineCounts.tracks, 5);
+  assert.equal(a?.headlineCounts.distinctArtists, 3); // Shared Band + A Only Band + Repeat Band
+
+  // repeatedPicks: A chose "Echo Song" (Repeat Band) in both sessions 1 and
+  // 4 — a genuine cross-session repeat — so A's Wrapped card lists it with
+  // both sessions. B and C never repeat a pick, so their lists are empty.
+  assert.deepEqual(a?.repeatedPicks, [
+    { title: "Echo Song", artist: "Repeat Band", sessions: [1, 4] },
+  ]);
+  assert.deepEqual(b?.repeatedPicks, []);
+  assert.deepEqual(c?.repeatedPicks, []);
 
   // A contributor with zero dated tracks gets a null/null era range (not
   // tested directly above since all fixtures have at least one dated

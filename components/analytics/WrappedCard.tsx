@@ -88,6 +88,24 @@ export function WrappedCard({ stats }: { stats: WrappedStats }) {
             <p className="text-xs opacity-80">sessions</p>
           </div>
         </div>
+
+        {stats.repeatedPicks.length > 0 && (
+          <div className="border-t border-current/20 pt-3">
+            <p className="text-xs font-medium uppercase tracking-wide opacity-80">
+              Repeated picks
+            </p>
+            <ul className="mt-1 flex flex-col gap-0.5">
+              {stats.repeatedPicks.map((pick) => (
+                <li
+                  key={`${pick.title}::${pick.artist}`}
+                  className="truncate text-sm font-semibold"
+                >
+                  {pick.title} — {pick.sessions.map((n) => `S${n}`).join(", ")}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

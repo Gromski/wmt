@@ -29,6 +29,8 @@ export type AttributedRow = {
   contributorName: string;
   sessionId: number;
   artistName: string;
+  title: string; // track title — repeat-detection key (lib/repeats.ts)
+  sessionNumber: number; // human session number — repeat-detection key + Wrapped links
   primaryGenre: string | null; // null => "Unspecified" bucket
   releaseYear: number | null; // null => "Unknown" decade bucket
 };
@@ -183,16 +185,19 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
       contributorName: schema.contributors.name,
       sessionId: schema.sessionTracks.sessionId,
       artistName: schema.tracks.artistName,
+      title: schema.tracks.title,
       releaseYear: schema.tracks.releaseYear,
+      sessionNumber: schema.sessions.sessionNumber,
     })
     .from(schema.sessionTracks)
     .leftJoin(
       schema.contributors,
       eq(schema.sessionTracks.attributedContributorId, schema.contributors.id),
     )
+    .leftJoin(schema.tracks, eq(schema.tracks.id, schema.sessionTracks.trackId))
     .leftJoin(
-      schema.tracks,
-      eq(schema.tracks.id, schema.sessionTracks.trackId),
+      schema.sessions,
+      eq(schema.sessions.id, schema.sessionTracks.sessionId),
     );
 
   // Query 2: all artist_tags ordered by artistName asc, rank asc.
@@ -211,7 +216,13 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
   // future null attribution / dangling track reference (D-01/CONTEXT).
   const attributedRows: AttributedRow[] = [];
   for (const row of attributedRowsRaw) {
-    if (!row.contributorInitials || !row.contributorName || !row.artistName) {
+    if (
+      !row.contributorInitials ||
+      !row.contributorName ||
+      !row.artistName ||
+      !row.title ||
+      row.sessionNumber === null
+    ) {
       continue;
     }
     attributedRows.push({
@@ -219,6 +230,8 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
       contributorName: row.contributorName,
       sessionId: row.sessionId,
       artistName: row.artistName,
+      title: row.title,
+      sessionNumber: row.sessionNumber,
       primaryGenre: artistGenreMap.get(row.artistName) ?? null,
       releaseYear: row.releaseYear ?? null,
     });
