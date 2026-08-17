@@ -5,6 +5,7 @@ import { ArchiveClient } from "@/components/ArchiveClient";
 import type { SessionCardPayload } from "@/components/SessionCard";
 import * as schema from "@/db/schema";
 import { db } from "@/lib/db";
+import { sumDurations } from "@/lib/duration";
 
 // Public RSC — no auth gate (D-01). Loads all sessions plus a per-session
 // contributor chip list (two-query merge per PATTERNS.md to avoid a large
@@ -26,6 +27,7 @@ export default async function SessionsPage() {
       initials: schema.contributors.initials,
       name: schema.contributors.name,
       artistName: schema.tracks.artistName,
+      durationMs: schema.tracks.durationMs,
     })
     .from(schema.sessionTracks)
     .innerJoin(
@@ -46,6 +48,7 @@ export default async function SessionsPage() {
     { initials: string; name: string; position: number }[]
   >();
   const artistsBySession = new Map<number, Set<string>>();
+  const durationsBySession = new Map<number, (number | null)[]>();
   for (const row of contributorRows) {
     if (row.initials && row.name) {
       const existing = contributorsBySession.get(row.sessionNumber) ?? [];
@@ -63,17 +66,27 @@ export default async function SessionsPage() {
       existing.add(row.artistName);
       artistsBySession.set(row.sessionNumber, existing);
     }
+    const durations = durationsBySession.get(row.sessionNumber) ?? [];
+    durations.push(row.durationMs);
+    durationsBySession.set(row.sessionNumber, durations);
   }
 
-  const sessions: SessionCardPayload[] = sessionRows.map((r) => ({
-    sessionNumber: r.sessionNumber,
-    theme: r.theme,
-    date: r.date instanceof Date ? r.date.getTime() : r.date,
-    contributors: (contributorsBySession.get(r.sessionNumber) ?? [])
-      .sort((a, b) => a.position - b.position)
-      .map((c) => ({ initials: c.initials, name: c.name })),
-    artistNames: Array.from(artistsBySession.get(r.sessionNumber) ?? []),
-  }));
+  const sessions: SessionCardPayload[] = sessionRows.map((r) => {
+    const { totalMs, unknownCount } = sumDurations(
+      durationsBySession.get(r.sessionNumber) ?? [],
+    );
+    return {
+      sessionNumber: r.sessionNumber,
+      theme: r.theme,
+      date: r.date instanceof Date ? r.date.getTime() : r.date,
+      contributors: (contributorsBySession.get(r.sessionNumber) ?? [])
+        .sort((a, b) => a.position - b.position)
+        .map((c) => ({ initials: c.initials, name: c.name })),
+      artistNames: Array.from(artistsBySession.get(r.sessionNumber) ?? []),
+      totalDurationMs: totalMs,
+      hasUnknownLength: unknownCount > 0,
+    };
+  });
 
   return (
     <main className="mx-auto max-w-[1120px] px-6 pt-12">

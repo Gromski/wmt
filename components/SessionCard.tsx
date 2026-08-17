@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ContributorChip } from "@/components/ContributorChip";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatDuration } from "@/lib/duration";
 
 export interface SessionCardContributor {
   initials: string;
@@ -14,6 +15,17 @@ export interface SessionCardPayload {
   date: number | null;
   contributors: SessionCardContributor[];
   artistNames: string[];
+  totalDurationMs: number;
+  hasUnknownLength: boolean;
+}
+
+// lengthLabel — pre-summed total -> formatted label with the "at least" "+"
+// suffix when one or more tracks in the session have unknown length.
+export function lengthLabel(
+  totalDurationMs: number,
+  hasUnknownLength: boolean,
+): string {
+  return formatDuration(totalDurationMs) + (hasUnknownLength ? "+" : "");
 }
 
 export function SessionCard({ session }: { session: SessionCardPayload }) {
@@ -46,6 +58,9 @@ export function SessionCard({ session }: { session: SessionCardPayload }) {
             }
           >
             {dateLabel}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {lengthLabel(session.totalDurationMs, session.hasUnknownLength)}
           </p>
           {session.contributors.length > 0 && (
             <div className="mt-1 flex items-center gap-1">

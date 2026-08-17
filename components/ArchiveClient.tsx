@@ -12,7 +12,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { ContributorChip } from "@/components/ContributorChip";
-import { SessionCard, type SessionCardPayload } from "@/components/SessionCard";
+import {
+  lengthLabel,
+  SessionCard,
+  type SessionCardPayload,
+} from "@/components/SessionCard";
 import { SessionTimeline } from "@/components/SessionTimeline";
 import { Button } from "@/components/ui/button";
 import {
@@ -222,6 +226,7 @@ export function ArchiveClient({
                   </button>
                 </TableHead>
                 <TableHead>Contributors</TableHead>
+                <TableHead className="w-[90px]">Length</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -276,6 +281,17 @@ export function ArchiveClient({
                             size={20}
                           />
                         ))}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <Link
+                        href={`/sessions/${session.sessionNumber}`}
+                        className="block focus-visible:outline-none"
+                      >
+                        {lengthLabel(
+                          session.totalDurationMs,
+                          session.hasUnknownLength,
+                        )}
                       </Link>
                     </TableCell>
                   </TableRow>
