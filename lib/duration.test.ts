@@ -5,11 +5,7 @@
 
 import assert from "node:assert/strict";
 
-import {
-  formatDuration,
-  sessionLengthLabel,
-  sumDurations,
-} from "./duration";
+import { formatDuration, sessionLengthLabel, sumDurations } from "./duration";
 
 function run() {
   // formatDuration: minutes only, below the hour threshold.
@@ -50,10 +46,7 @@ function run() {
   assert.equal(sessionLengthLabel([60 * 60000, 12 * 60000]), "1h 12m");
 
   // sessionLengthLabel: one or more unknowns -> trailing "+".
-  assert.equal(
-    sessionLengthLabel([60 * 60000, 12 * 60000, null]),
-    "1h 12m+",
-  );
+  assert.equal(sessionLengthLabel([60 * 60000, 12 * 60000, null]), "1h 12m+");
 
   // sessionLengthLabel: all unknown -> "0m+".
   assert.equal(sessionLengthLabel([null, null]), "0m+");

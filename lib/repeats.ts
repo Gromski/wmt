@@ -24,7 +24,10 @@ export function buildRepeatIndex(
   const index = new Map<string, number[]>();
   for (const [key, sessionSet] of sessionsByKey) {
     if (sessionSet.size >= 2) {
-      index.set(key, [...sessionSet].sort((a, b) => a - b));
+      index.set(
+        key,
+        [...sessionSet].sort((a, b) => a - b),
+      );
     }
   }
   return index;
