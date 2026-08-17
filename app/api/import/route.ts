@@ -464,6 +464,20 @@ export async function POST(request: Request) {
         let insertedTracksCount = 0;
 
         await db.transaction(async (tx) => {
+          // Preserve manually-entered session dates across the replace-all.
+          // Dates don't exist in Apple Music data, so without this a re-import
+          // (to pick up new tracks) wipes every date the admin entered. Capture
+          // them by session_number BEFORE the delete and re-apply on insert.
+          const existingDates = await tx
+            .select({
+              sessionNumber: schema.sessions.sessionNumber,
+              date: schema.sessions.date,
+            })
+            .from(schema.sessions);
+          const dateBySession = new Map(
+            existingDates.map((r) => [r.sessionNumber, r.date]),
+          );
+
           // Replace-all (D-04): delete child tables first, then parents
           await tx.delete(schema.artistTags);
           await tx.delete(schema.sessionTracks);
@@ -491,6 +505,8 @@ export async function POST(request: Request) {
             description: sp.description,
             appleMusicPlaylistId: sp.appleMusicPlaylistId,
             attributionParsed: sp.attributionParsed,
+            // Carry the previously-entered date over the replace-all (null if new).
+            date: dateBySession.get(sp.sessionNumber) ?? null,
           }));
 
           let insertedSessions: { id: number }[] = [];
